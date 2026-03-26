@@ -1,13 +1,15 @@
-local Player = game.Players.LocalPlayer
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local DetectedPlot = nil
 
 local function GetMyPlot()
     local Bases = workspace:FindFirstChild("Bases")
     if Bases then
         for _, plot in pairs(Bases:GetChildren()) do
-            if plot:FindFirstChild("Owner") and plot.Owner.Value == Player.Name then 
+            if plot:FindFirstChild("Owner") and plot.Owner.Value == Player.Name then
                 return plot
-            elseif plot:GetAttribute("Owner") == Player.UserId or plot:GetAttribute("Owner") == Player.Name then 
-                return plot 
+            elseif plot:GetAttribute("Owner") == Player.UserId or plot:GetAttribute("Owner") == Player.Name then
+                return plot
             end
         end
     end
@@ -16,33 +18,29 @@ end
 
 task.spawn(function()
     while _G.AutoDupeStrong do
-        task.wait(0.5)
-        -- Cari plot setiap putaran kalau belum ketemu
-        local currentPlot = GetMyPlot()
+        if not DetectedPlot then DetectedPlot = GetMyPlot() end
         
-        if currentPlot then
-            local slots = currentPlot:FindFirstChild("Slots")
+        if DetectedPlot then
+            local slots = DetectedPlot:FindFirstChild("Slots")
             if slots then
                 for _, slot in pairs(slots:GetChildren()) do
-                    -- Cek toggle biar bisa langsung OFF
                     if not _G.AutoDupeStrong then break end
                     
+                    -- PAKE LOGIC ASLI MENTAHAN LU (Promts - pake 's')
                     local prompts = slot:FindFirstChild("PromptPart") and slot.PromptPart:FindFirstChild("Prompts")
                     if prompts then
                         local place = prompts:FindFirstChild("Place")
-                        local pickup = prompts:FindFirstChild("PickUp")
-                        
-                        -- Logic Dupe: Place lalu PickUp cepat
                         if place then fireproximityprompt(place) end
+                        
                         task.wait(0.1)
+                        
+                        local pickup = prompts:FindFirstChild("PickUp")
                         if pickup then fireproximityprompt(pickup) end
                     end
                 end
             end
-        else
-            -- Kalau plot belum ketemu, kasih tau di console buat debug
-            warn("Plot tidak ditemukan, sedang mencari...")
         end
+        task.wait(0.5)
     end
-    print("Auto Dupe Strong Berhasil Dimatikan")
+    DetectedPlot = nil
 end)
