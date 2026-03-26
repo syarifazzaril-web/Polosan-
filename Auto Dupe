@@ -5,43 +5,32 @@ local function GetMyPlot()
     local Bases = workspace:FindFirstChild("Bases")
     if Bases then
         for _, plot in pairs(Bases:GetChildren()) do
-            if plot:FindFirstChild("Owner") and plot.Owner.Value == Player.Name then
-                return plot
-            elseif plot:GetAttribute("Owner") == Player.UserId or plot:GetAttribute("Owner") == Player.Name then
-                return plot
-            end
+            if plot:FindFirstChild("Owner") and plot.Owner.Value == Player.Name then return plot
+            elseif plot:GetAttribute("Owner") == Player.UserId or plot:GetAttribute("Owner") == Player.Name then return plot end
         end
     end
     return nil
 end
 
 task.spawn(function()
-    while _G.AutoDupeStrong do -- Saklar utama dari GUI
-        task.wait(0.5)
+    while _G.AutoDupeStrong do
         currentPlot = currentPlot or GetMyPlot()
         if currentPlot then
             local slots = currentPlot:FindFirstChild("Slots")
             if slots then
                 for _, slot in pairs(slots:GetChildren()) do
-                    -- Cek status toggle biar langsung berhenti di tengah proses
-                    if not _G.AutoDupeStrong then break end 
-
+                    if not _G.AutoDupeStrong then break end
                     local prompts = slot:FindFirstChild("PromptPart") and slot.PromptPart:FindFirstChild("Prompts")
                     if prompts then
                         local place = prompts:FindFirstChild("Place")
                         local pickup = prompts:FindFirstChild("PickUp")
-                        
-                        if _G.AutoDupeStrong and place then 
-                            fireproximityprompt(place) 
-                        end
+                        if place then fireproximityprompt(place) end
                         task.wait(0.1)
-                        if _G.AutoDupeStrong and pickup then 
-                            fireproximityprompt(pickup) 
-                        end
+                        if pickup then fireproximityprompt(pickup) end
                     end
                 end
             end
         end
+        task.wait(0.5)
     end
-    print("Auto Dupe Strong Berhasil Dimatikan")
 end)
