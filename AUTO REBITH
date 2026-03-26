@@ -1,4 +1,3 @@
--- // 3. AUTO REBIRTH (SMART & FULL)
 local Player = game.Players.LocalPlayer
 local remotes = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
 local BASE_POS = Vector3.new(75.60234832763672, 6.67, 8.527978897094727)
@@ -6,19 +5,21 @@ local BASE_POS = Vector3.new(75.60234832763672, 6.67, 8.527978897094727)
 -- Fungsi Teleport agar tidak hilang
 local function teleportToBase()
     local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then 
-        hrp.CFrame = CFrame.new(BASE_POS) 
+    if hrp then
+        hrp.CFrame = CFrame.new(BASE_POS)
     end
     task.wait(1)
 end
 
 -- Fungsi Collect Item (Brainrots) untuk syarat Rebirth
 local function collectSpecific(targetName)
+    if not _G.AutoRebirth then return false end -- Cek sebelum mulai collect
     local folder = workspace:FindFirstChild("Brainrots")
     if not folder then return false end
     local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    
+
     for _, brainrot in pairs(folder:GetChildren()) do
+        if not _G.AutoRebirth then break end -- Berhenti jika toggle OFF di tengah proses
         local brainrotName = brainrot:GetAttribute("BrainrotName")
         if brainrotName and brainrotName:lower() == targetName:lower() then
             local prompt = brainrot:FindFirstChildOfClass("ProximityPrompt") or brainrot:FindFirstChild("ProximityPrompt", true)
@@ -37,24 +38,25 @@ local function collectSpecific(targetName)
     return false
 end
 
--- Loop Rebirth
+-- Loop Rebirth Utama
 task.spawn(function()
-    while true do
+    while _G.AutoRebirth do -- Ganti while true jadi ini
         pcall(function()
             local info = remotes:WaitForChild("GetRebirthInfo"):InvokeServer()
             if info then
                 -- Cek Power
-                if info.CurrentPower < info.RequiredPower then
+                if _G.AutoRebirth and info.CurrentPower < info.RequiredPower then
                     remotes:WaitForChild("BuyPower"):FireServer(10)
                 end
-                
+
                 -- Cek Bisa Rebirth
-                if info.CanRebirth then
+                if _G.AutoRebirth and info.CanRebirth then
                     remotes:WaitForChild("DoRebirth"):FireServer()
                     task.wait(2)
                 -- Cek Syarat Brainrots
-                elseif info.RequiredBrainrots then
+                elseif _G.AutoRebirth and info.RequiredBrainrots then
                     for _, req in pairs(info.RequiredBrainrots) do
+                        if not _G.AutoRebirth then break end
                         if not req.Has then
                             collectSpecific(req.Name)
                         end
@@ -64,4 +66,5 @@ task.spawn(function()
         end)
         task.wait(0.5)
     end
+    print("Auto Rebirth Berhasil Dimatikan")
 end)
