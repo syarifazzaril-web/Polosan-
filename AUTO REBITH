@@ -1,46 +1,54 @@
-local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
-local DetectedPlot = nil
+local Player = game.Players.LocalPlayer
+local remotes = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
+local BASE_POS = Vector3.new(75.60234832763672, 6.67, 8.527978897094727)
 
-local function GetMyPlot()
-    local Bases = workspace:FindFirstChild("Bases")
-    if Bases then
-        for _, plot in pairs(Bases:GetChildren()) do
-            if plot:FindFirstChild("Owner") and plot.Owner.Value == Player.Name then
-                return plot
-            elseif plot:GetAttribute("Owner") == Player.UserId or plot:GetAttribute("Owner") == Player.Name then
-                return plot
+local function teleportToBase()
+    local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(BASE_POS) end
+    task.wait(1)
+end
+
+local function collectSpecific(targetName)
+    local folder = workspace:FindFirstChild("Brainrots")
+    if not folder then return false end
+    for _, brainrot in pairs(folder:GetChildren()) do
+        if not _G.AutoRebirth then break end
+        local brainrotName = brainrot:GetAttribute("BrainrotName")
+        if brainrotName and brainrotName:lower() == targetName:lower() then
+            local prompt = brainrot:FindFirstChildOfClass("ProximityPrompt") or brainrot:FindFirstChild("ProximityPrompt", true)
+            local part = brainrot.PrimaryPart or brainrot:FindFirstChildOfClass("BasePart")
+            if prompt and part and Player.Character:FindFirstChild("HumanoidRootPart") then
+                Player.Character.HumanoidRootPart.CFrame = CFrame.new(part.Position + Vector3.new(0, 3, 0))
+                task.wait(0.3)
+                fireproximityprompt(prompt)
+                task.wait(0.5)
+                teleportToBase()
+                return true
             end
         end
     end
-    return nil
+    return false
 end
 
 task.spawn(function()
-    while _G.AutoDupeStrong do
-        if _G.AutoDupeStrong and not DetectedPlot then 
-            DetectedPlot = GetMyPlot() 
-        end
-        
-        if DetectedPlot then
-            local slots = DetectedPlot:FindFirstChild("Slots")
-            if slots then
-                for _, slot in pairs(slots:GetChildren()) do
-                    if not _G.AutoDupeStrong then break end
-                    
-                    -- Balikin ke logic typo mentahan lu: "Promts"
-                    local prompts = slot:FindFirstChild("PromptPart") and slot.PromptPart:FindFirstChild("Promts")
-                    if prompts then
-                        local place = prompts:FindFirstChild("Place")
-                        if place then fireproximityprompt(place) end
-                        task.wait(0.1)
-                        local pickup = prompts:FindFirstChild("PickUp")
-                        if pickup then fireproximityprompt(pickup) end
+    while _G.AutoRebirth do
+        pcall(function()
+            local info = remotes:WaitForChild("GetRebirthInfo"):InvokeServer()
+            if info then
+                if info.CurrentPower < info.RequiredPower then
+                    remotes:WaitForChild("BuyPower"):FireServer(10)
+                end
+                if info.CanRebirth then
+                    remotes:WaitForChild("DoRebirth"):FireServer()
+                    task.wait(2)
+                elseif info.RequiredBrainrots then
+                    for _, req in pairs(info.RequiredBrainrots) do
+                        if not _G.AutoRebirth then break end
+                        if not req.Has then collectSpecific(req.Name) end
                     end
                 end
             end
-        end
+        end)
         task.wait(0.5)
     end
-    DetectedPlot = nil -- Reset pas OFF
 end)
