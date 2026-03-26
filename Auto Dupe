@@ -18,7 +18,9 @@ end
 
 task.spawn(function()
     while _G.AutoDupeStrong do
-        if not DetectedPlot then DetectedPlot = GetMyPlot() end
+        if _G.AutoDupeStrong and not DetectedPlot then 
+            DetectedPlot = GetMyPlot() 
+        end
         
         if DetectedPlot then
             local slots = DetectedPlot:FindFirstChild("Slots")
@@ -26,14 +28,12 @@ task.spawn(function()
                 for _, slot in pairs(slots:GetChildren()) do
                     if not _G.AutoDupeStrong then break end
                     
-                    -- PAKE LOGIC ASLI MENTAHAN LU (Promts - pake 's')
-                    local prompts = slot:FindFirstChild("PromptPart") and slot.PromptPart:FindFirstChild("Prompts")
+                    -- Balikin ke logic typo mentahan lu: "Promts"
+                    local prompts = slot:FindFirstChild("PromptPart") and slot.PromptPart:FindFirstChild("Promts")
                     if prompts then
                         local place = prompts:FindFirstChild("Place")
                         if place then fireproximityprompt(place) end
-                        
                         task.wait(0.1)
-                        
                         local pickup = prompts:FindFirstChild("PickUp")
                         if pickup then fireproximityprompt(pickup) end
                     end
@@ -42,5 +42,5 @@ task.spawn(function()
         end
         task.wait(0.5)
     end
-    DetectedPlot = nil
+    DetectedPlot = nil -- Reset pas OFF
 end)
