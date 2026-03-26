@@ -1,10 +1,13 @@
 local Player = game.Players.LocalPlayer
+local char = Player.Character or Player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
 
 local function GetMyPlot()
     local Bases = workspace:FindFirstChild("Bases")
     if Bases then
         for _, plot in pairs(Bases:GetChildren()) do
-            if plot:FindFirstChild("Owner") and plot.Owner.Value == Player.Name then return plot end
+            if plot:FindFirstChild("Owner") and plot.Owner.Value == Player.Name then return plot
+            elseif plot:GetAttribute("Owner") == Player.UserId or plot:GetAttribute("Owner") == Player.Name then return plot end
         end
     end
     return nil
@@ -12,7 +15,6 @@ end
 
 task.spawn(function()
     while _G.AutoCollect do
-        local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
         if hrp then
             local myPlot = GetMyPlot()
             if myPlot then
