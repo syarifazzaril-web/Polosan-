@@ -17,7 +17,8 @@ local function GetMyPlot()
 end
 
 task.spawn(function()
-    while true do
+    while _G.AutoCollect do -- Ganti while true jadi ini
+        task.wait(0.5) -- Delay awal loop
         if hrp then
             local myPlot = GetMyPlot()
             if myPlot then
@@ -25,19 +26,28 @@ task.spawn(function()
                 if slots then
                     local oldPos = hrp.CFrame
                     for _, slot in pairs(slots:GetChildren()) do
+                        -- Cek status toggle di tengah loop agar cepat berhenti
+                        if not _G.AutoCollect then break end 
+
                         local collect = slot:FindFirstChild("Collect")
                         if collect then
                             hrp.CFrame = CFrame.new(collect.Position + Vector3.new(0, 3, 0))
                             task.wait(0.3)
                             local prompt = collect:FindFirstChildOfClass("ProximityPrompt") or collect:FindFirstChild("ProximityPrompt", true)
-                            if prompt then fireproximityprompt(prompt) end
+                            if prompt then 
+                                fireproximityprompt(prompt) 
+                            end
                             task.wait(0.2)
                         end
                     end
-                    hrp.CFrame = oldPos
+                    -- Balikin ke posisi awal cuma kalau masih aktif
+                    if _G.AutoCollect then
+                        hrp.CFrame = oldPos
+                    end
                 end
             end
         end
-        task.wait(10)
+        task.wait(10) -- Jeda antar putaran collect
     end
+    print("Auto Collect Berhasil Dimatikan")
 end)
