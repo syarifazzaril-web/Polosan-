@@ -1,0 +1,67 @@
+-- // 3. AUTO REBIRTH (SMART & FULL)
+local Player = game.Players.LocalPlayer
+local remotes = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
+local BASE_POS = Vector3.new(75.60234832763672, 6.67, 8.527978897094727)
+
+-- Fungsi Teleport agar tidak hilang
+local function teleportToBase()
+    local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then 
+        hrp.CFrame = CFrame.new(BASE_POS) 
+    end
+    task.wait(1)
+end
+
+-- Fungsi Collect Item (Brainrots) untuk syarat Rebirth
+local function collectSpecific(targetName)
+    local folder = workspace:FindFirstChild("Brainrots")
+    if not folder then return false end
+    local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    
+    for _, brainrot in pairs(folder:GetChildren()) do
+        local brainrotName = brainrot:GetAttribute("BrainrotName")
+        if brainrotName and brainrotName:lower() == targetName:lower() then
+            local prompt = brainrot:FindFirstChildOfClass("ProximityPrompt") or brainrot:FindFirstChild("ProximityPrompt", true)
+            local part = brainrot.PrimaryPart or brainrot:FindFirstChildOfClass("BasePart")
+            
+            if prompt and part and hrp then
+                hrp.CFrame = CFrame.new(part.Position + Vector3.new(0, 3, 0))
+                task.wait(0.3)
+                fireproximityprompt(prompt)
+                task.wait(0.5)
+                teleportToBase() -- Balik ke base setelah ambil
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- Loop Rebirth
+task.spawn(function()
+    while true do
+        pcall(function()
+            local info = remotes:WaitForChild("GetRebirthInfo"):InvokeServer()
+            if info then
+                -- Cek Power
+                if info.CurrentPower < info.RequiredPower then
+                    remotes:WaitForChild("BuyPower"):FireServer(10)
+                end
+                
+                -- Cek Bisa Rebirth
+                if info.CanRebirth then
+                    remotes:WaitForChild("DoRebirth"):FireServer()
+                    task.wait(2)
+                -- Cek Syarat Brainrots
+                elseif info.RequiredBrainrots then
+                    for _, req in pairs(info.RequiredBrainrots) do
+                        if not req.Has then
+                            collectSpecific(req.Name)
+                        end
+                    end
+                end
+            end
+        end)
+        task.wait(0.5)
+    end
+end)
