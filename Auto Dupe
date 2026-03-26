@@ -1,12 +1,14 @@
 local Player = game.Players.LocalPlayer
-local currentPlot = nil
 
 local function GetMyPlot()
     local Bases = workspace:FindFirstChild("Bases")
     if Bases then
         for _, plot in pairs(Bases:GetChildren()) do
-            if plot:FindFirstChild("Owner") and plot.Owner.Value == Player.Name then return plot
-            elseif plot:GetAttribute("Owner") == Player.UserId or plot:GetAttribute("Owner") == Player.Name then return plot end
+            if plot:FindFirstChild("Owner") and plot.Owner.Value == Player.Name then 
+                return plot
+            elseif plot:GetAttribute("Owner") == Player.UserId or plot:GetAttribute("Owner") == Player.Name then 
+                return plot 
+            end
         end
     end
     return nil
@@ -14,23 +16,33 @@ end
 
 task.spawn(function()
     while _G.AutoDupeStrong do
-        currentPlot = currentPlot or GetMyPlot()
+        task.wait(0.5)
+        -- Cari plot setiap putaran kalau belum ketemu
+        local currentPlot = GetMyPlot()
+        
         if currentPlot then
             local slots = currentPlot:FindFirstChild("Slots")
             if slots then
                 for _, slot in pairs(slots:GetChildren()) do
+                    -- Cek toggle biar bisa langsung OFF
                     if not _G.AutoDupeStrong then break end
+                    
                     local prompts = slot:FindFirstChild("PromptPart") and slot.PromptPart:FindFirstChild("Prompts")
                     if prompts then
                         local place = prompts:FindFirstChild("Place")
                         local pickup = prompts:FindFirstChild("PickUp")
+                        
+                        -- Logic Dupe: Place lalu PickUp cepat
                         if place then fireproximityprompt(place) end
                         task.wait(0.1)
                         if pickup then fireproximityprompt(pickup) end
                     end
                 end
             end
+        else
+            -- Kalau plot belum ketemu, kasih tau di console buat debug
+            warn("Plot tidak ditemukan, sedang mencari...")
         end
-        task.wait(0.5)
     end
+    print("Auto Dupe Strong Berhasil Dimatikan")
 end)
