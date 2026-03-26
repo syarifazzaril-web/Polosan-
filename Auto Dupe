@@ -16,23 +16,32 @@ local function GetMyPlot()
 end
 
 task.spawn(function()
-    while true do
+    while _G.AutoDupeStrong do -- Saklar utama dari GUI
+        task.wait(0.5)
         currentPlot = currentPlot or GetMyPlot()
         if currentPlot then
             local slots = currentPlot:FindFirstChild("Slots")
             if slots then
                 for _, slot in pairs(slots:GetChildren()) do
-                    local prompts = slot:FindFirstChild("PromptPart") and slot.PromptPart:FindFirstChild("Promts")
+                    -- Cek status toggle biar langsung berhenti di tengah proses
+                    if not _G.AutoDupeStrong then break end 
+
+                    local prompts = slot:FindFirstChild("PromptPart") and slot.PromptPart:FindFirstChild("Prompts")
                     if prompts then
                         local place = prompts:FindFirstChild("Place")
                         local pickup = prompts:FindFirstChild("PickUp")
-                        if place then fireproximityprompt(place) end
+                        
+                        if _G.AutoDupeStrong and place then 
+                            fireproximityprompt(place) 
+                        end
                         task.wait(0.1)
-                        if pickup then fireproximityprompt(pickup) end
+                        if _G.AutoDupeStrong and pickup then 
+                            fireproximityprompt(pickup) 
+                        end
                     end
                 end
             end
         end
-        task.wait(0.5)
     end
+    print("Auto Dupe Strong Berhasil Dimatikan")
 end)
