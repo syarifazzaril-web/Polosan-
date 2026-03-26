@@ -11,15 +11,14 @@ end
 local function collectSpecific(targetName)
     local folder = workspace:FindFirstChild("Brainrots")
     if not folder then return false end
-    local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     for _, brainrot in pairs(folder:GetChildren()) do
         if not _G.AutoRebirth then break end
         local brainrotName = brainrot:GetAttribute("BrainrotName")
         if brainrotName and brainrotName:lower() == targetName:lower() then
             local prompt = brainrot:FindFirstChildOfClass("ProximityPrompt") or brainrot:FindFirstChild("ProximityPrompt", true)
             local part = brainrot.PrimaryPart or brainrot:FindFirstChildOfClass("BasePart")
-            if prompt and part and hrp then
-                hrp.CFrame = CFrame.new(part.Position + Vector3.new(0, 3, 0))
+            if prompt and part and Player.Character:FindFirstChild("HumanoidRootPart") then
+                Player.Character.HumanoidRootPart.CFrame = CFrame.new(part.Position + Vector3.new(0, 3, 0))
                 task.wait(0.3)
                 fireproximityprompt(prompt)
                 task.wait(0.5)
@@ -32,7 +31,7 @@ local function collectSpecific(targetName)
 end
 
 task.spawn(function()
-    while _G.AutoRebirth do -- Pake variabel kontrol
+    while _G.AutoRebirth do
         pcall(function()
             local info = remotes:WaitForChild("GetRebirthInfo"):InvokeServer()
             if info then
