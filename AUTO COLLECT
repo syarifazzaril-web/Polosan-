@@ -1,0 +1,43 @@
+local Player = game.Players.LocalPlayer
+local char = Player.Character or Player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+local function GetMyPlot()
+    local Bases = workspace:FindFirstChild("Bases")
+    if Bases then
+        for _, plot in pairs(Bases:GetChildren()) do
+            if plot:FindFirstChild("Owner") and plot.Owner.Value == Player.Name then
+                return plot
+            elseif plot:GetAttribute("Owner") == Player.UserId or plot:GetAttribute("Owner") == Player.Name then
+                return plot
+            end
+        end
+    end
+    return nil
+end
+
+task.spawn(function()
+    while true do
+        if hrp then
+            local myPlot = GetMyPlot()
+            if myPlot then
+                local slots = myPlot:FindFirstChild("Slots")
+                if slots then
+                    local oldPos = hrp.CFrame
+                    for _, slot in pairs(slots:GetChildren()) do
+                        local collect = slot:FindFirstChild("Collect")
+                        if collect then
+                            hrp.CFrame = CFrame.new(collect.Position + Vector3.new(0, 3, 0))
+                            task.wait(0.3)
+                            local prompt = collect:FindFirstChildOfClass("ProximityPrompt") or collect:FindFirstChild("ProximityPrompt", true)
+                            if prompt then fireproximityprompt(prompt) end
+                            task.wait(0.2)
+                        end
+                    end
+                    hrp.CFrame = oldPos
+                end
+            end
+        end
+        task.wait(10)
+    end
+end)
