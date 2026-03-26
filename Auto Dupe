@@ -1,0 +1,38 @@
+local Player = game.Players.LocalPlayer
+local currentPlot = nil
+
+local function GetMyPlot()
+    local Bases = workspace:FindFirstChild("Bases")
+    if Bases then
+        for _, plot in pairs(Bases:GetChildren()) do
+            if plot:FindFirstChild("Owner") and plot.Owner.Value == Player.Name then
+                return plot
+            elseif plot:GetAttribute("Owner") == Player.UserId or plot:GetAttribute("Owner") == Player.Name then
+                return plot
+            end
+        end
+    end
+    return nil
+end
+
+task.spawn(function()
+    while true do
+        currentPlot = currentPlot or GetMyPlot()
+        if currentPlot then
+            local slots = currentPlot:FindFirstChild("Slots")
+            if slots then
+                for _, slot in pairs(slots:GetChildren()) do
+                    local prompts = slot:FindFirstChild("PromptPart") and slot.PromptPart:FindFirstChild("Promts")
+                    if prompts then
+                        local place = prompts:FindFirstChild("Place")
+                        local pickup = prompts:FindFirstChild("PickUp")
+                        if place then fireproximityprompt(place) end
+                        task.wait(0.1)
+                        if pickup then fireproximityprompt(pickup) end
+                    end
+                end
+            end
+        end
+        task.wait(0.5)
+    end
+end)
