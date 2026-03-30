@@ -1,0 +1,124 @@
+-- [[ Rilzz Hub ]] --
+-- TAB: PULL LUCKY BLOCKS
+
+local lib = _G.RilzHub
+local LuckyBlocks = lib:AddTab("PULL Lucky blocks")
+
+lib:AddToggle(LuckyBlocks.scroll, "Auto Best Lucky Blocks", "Otomatis pull lucky block terbaik", false, function(Value)
+    _G.AutoDumbell = Value
+    if Value then
+        local remote = game:GetService("ReplicatedStorage")
+            :WaitForChild("SharedModules")
+            :WaitForChild("Network")
+            :WaitForChild("Remotes")
+            :WaitForChild("Activate Dumbell")
+
+        task.spawn(function()
+            while _G.AutoDumbell do
+                pcall(function()
+                    remote:FireServer()
+                end)
+                task.wait(0.1)
+            end
+        end)
+    end
+end)
+
+lib:AddToggle(LuckyBlocks.scroll, "Auto Collect", "Otomatis collect dari plot", false, function(Value)
+    _G.AutoCollectLucky = Value
+    if Value then
+        task.spawn(function()
+            local Players = game:GetService("Players")
+            local Workspace = game:GetService("Workspace")
+
+            local player = Players.LocalPlayer
+            repeat task.wait() until player.Character
+            local hrp = player.Character:WaitForChild("HumanoidRootPart")
+
+            local plots = Workspace:WaitForChild("Plots")
+
+            local myPlot = nil
+            for _, plot in pairs(plots:GetChildren()) do
+                local owner = plot:FindFirstChild("owner")
+                if owner and owner.Value == player.Name then
+                    myPlot = plot
+                    break
+                end
+            end
+
+            if not myPlot then
+                warn("[AutoFarm] Plot tidak ditemukan!")
+                return
+            end
+            print("[AutoFarm] Plot ditemukan: " .. myPlot.Name)
+
+            local function collectAll()
+                repeat task.wait() until player.Character
+                hrp = player.Character:WaitForChild("HumanoidRootPart")
+
+                local count = 0
+                local collectPads = myPlot:FindFirstChild("CollectPads")
+                if collectPads then
+                    for _, model in pairs(collectPads:GetChildren()) do
+                        if model:FindFirstChild("PurchaseInfo", true) then
+                            continue
+                        end
+                        for _, obj in pairs(model:GetDescendants()) do
+                            if obj:IsA("BasePart") then
+                                pcall(firetouchinterest, hrp, obj, 0)
+                                pcall(firetouchinterest, hrp, obj, 1)
+                                count = count + 1
+                            end
+                        end
+                    end
+                end
+                print("[AutoFarm] Collected " .. count .. " pads!")
+            end
+
+            while _G.AutoCollectLucky do
+                collectAll()
+                task.wait(30)
+            end
+        end)
+    end
+end)
+
+lib:AddToggle(LuckyBlocks.scroll, "Auto Rebirth", "Otomatis Rebirth", false, function(Value)
+    _G.AutoRebirthLucky = Value
+    if Value then
+        local rebirth = game:GetService("ReplicatedStorage")
+            :WaitForChild("SharedModules")
+            :WaitForChild("Network")
+            :WaitForChild("Remotes")
+            :WaitForChild("Rebirth")
+
+        task.spawn(function()
+            while _G.AutoRebirthLucky do
+                pcall(function()
+                    rebirth:FireServer()
+                end)
+                task.wait(0.1)
+            end
+        end)
+    end
+end)
+
+lib:AddToggle(LuckyBlocks.scroll, "Auto Strength", "Otomatis farming strength", false, function(Value)
+    _G.AutoStrength = Value
+    if Value then
+        local remote = game:GetService("ReplicatedStorage")
+            :WaitForChild("SharedModules")
+            :WaitForChild("Network")
+            :WaitForChild("Remotes")
+            :WaitForChild("Activate Dumbell")
+
+        task.spawn(function()
+            while _G.AutoStrength do
+                pcall(function()
+                    remote:FireServer()
+                end)
+                task.wait(0.01)
+            end
+        end)
+    end
+end)
