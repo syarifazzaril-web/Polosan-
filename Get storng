@@ -1,0 +1,32 @@
+-- [[ Rilzz Hub ]] --
+-- TAB: GET STRONG FOR BRAINROT
+
+local lib = _G.RilzHub
+local GetStrong = lib:AddTab("GET STRONG FOR BRAINROT")
+
+lib:AddToggle(GetStrong.scroll, "Auto Rebirth", "Otomatis Rebirth", false, function(Value)
+    _G.AutoRebirth = Value
+    if Value then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/syarifazzaril-web/Polosan-/refs/heads/main/AUTO%20REBITH"))()
+    end
+end)
+
+lib:AddToggle(GetStrong.scroll, "Auto Dupe", "Otomatis Dupe Strong", false, function(Value)
+    _G.AutoDupeStrong = Value
+    if Value then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/syarifazzaril-web/Polosan-/refs/heads/main/Auto%20Dupe"))()
+    end
+end)
+
+lib:AddToggle(GetStrong.scroll, "Auto Collect", "Otomatis Ambil Item", false, function(Value)
+    _G.AutoCollect = Value
+    if Value then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/syarifazzaril-web/Polosan-/refs/heads/main/AUTO%20COLLECT"))()
+    end
+end)
+
+lib:AddButton(GetStrong.scroll, "Force Rejoin", "Klik untuk masuk ulang server", function()
+    local TeleportService = game:GetService("TeleportService")
+    local Players = game:GetService("Players")
+    TeleportService:Teleport(game.PlaceId, Players.LocalPlayer)
+end)
