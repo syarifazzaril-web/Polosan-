@@ -2,7 +2,7 @@
 -- TAB: PULL LUCKY BLOCKS
 
 local lib = _G.RilzHub
-local LuckyBlocks = lib:AddTab("PULL Lucky blocks")
+local LuckyBlocks = _G.LuckyBlocksTab
 
 lib:AddToggle(LuckyBlocks.scroll, "Auto Best Lucky Blocks", "Otomatis pull lucky block terbaik", false, function(Value)
     _G.AutoDumbell = Value
