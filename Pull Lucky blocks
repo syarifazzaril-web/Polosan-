@@ -13,14 +13,12 @@ lib:AddButton(LuckyBlocks.scroll, "Auto Best Lucky Blocks", "Primary", function(
         local player = Players.LocalPlayer
         repeat task.wait() until player.Character
         local hrp = player.Character:WaitForChild("HumanoidRootPart")
+        local humanoid = player.Character:WaitForChild("Humanoid")
+        local friends = workspace:FindFirstChild("Live") and workspace:FindFirstChild("Live"):FindFirstChild("Friends")
 
-        local friends = workspace:FindFirstChild("Live") and
-                        workspace:FindFirstChild("Live"):FindFirstChild("Friends")
+        if not friends then warn("[AutoBestLucky] Folder Friends tidak ditemukan!") return end
 
-        if not friends then
-            warn("[AutoBestLucky] Folder Friends tidak ditemukan!")
-            return
-        end
+        local SPAWN = CFrame.new(197.6789514160156, 2.4594995975494385, 308.1326599121094)
 
         local priority = {
             ["Divine Lucky Block"]        = 1,
@@ -35,35 +33,57 @@ lib:AddButton(LuckyBlocks.scroll, "Auto Best Lucky Blocks", "Primary", function(
             ["Common Lucky Block"]        = 10,
         }
 
-        local function getSortedBlocks()
-            local list = {}
-            for _, block in pairs(friends:GetChildren()) do
-                local p = priority[block.Name]
-                if p then
-                    table.insert(list, {block = block, p = p})
-                end
-            end
-            table.sort(list, function(a, b) return a.p < b.p end)
-            return list
+        local function lerpCFrame(a, b, t)
+            return a:Lerp(b, t)
         end
 
-        local sorted = getSortedBlocks()
-        if #sorted == 0 then
-            warn("[AutoBestLucky] Tidak ada lucky block tersedia!")
-            return
+        local function smoothFly(targetCFrame, duration)
+            local startCFrame = hrp.CFrame
+            local elapsed = 0
+            while elapsed < duration do
+                elapsed = elapsed + task.wait()
+                local t = math.min(elapsed / duration, 1)
+                hrp.CFrame = lerpCFrame(startCFrame, targetCFrame, t)
+            end
+            hrp.CFrame = targetCFrame
         end
 
-        local best = sorted[1].block
-        local rp = best:FindFirstChild("RootPart")
-        if rp then
-            local pos = rp.CFrame.Position
-            hrp.CFrame = CFrame.new(pos.X, pos.Y + 5, pos.Z)
-            task.wait(0.3)
-            local prompt = rp:FindFirstChild("StealPrompt")
-            if prompt then
-                pcall(fireproximityprompt, prompt)
+        -- Cari block terbaik
+        local bestBlock = nil
+        local bestPriority = 999
+        for _, block in pairs(friends:GetChildren()) do
+            local p = priority[block.Name]
+            if p and p < bestPriority then
+                bestPriority = p
+                bestBlock = block
             end
         end
+
+        if not bestBlock then warn("[AutoBestLucky] Tidak ada lucky block!") return end
+
+        local rp = bestBlock:FindFirstChild("RootPart")
+        if not rp then warn("[AutoBestLucky] RootPart tidak ditemukan!") return end
+
+        -- Terbang ke block
+        local pos = rp.CFrame.Position
+        hrp.CFrame = CFrame.new(pos.X, pos.Y + 5, pos.Z)
+        task.wait(0.3)
+
+        -- Steal
+        local prompt = rp:FindFirstChild("StealPrompt")
+        if prompt then
+            fireproximityprompt(prompt)
+            print("[AutoBestLucky] Steal: " .. bestBlock.Name)
+        end
+
+        -- Terbang balik ke spawn
+        humanoid.PlatformStand = true
+        smoothFly(CFrame.new(hrp.Position + Vector3.new(0, 100, 0)), 0.3)
+        local spawnPos = SPAWN.Position
+        smoothFly(CFrame.new(spawnPos.X, spawnPos.Y + 100, spawnPos.Z), 1)
+        smoothFly(SPAWN, 0.3)
+        humanoid.PlatformStand = false
+        print("[AutoBestLucky] Sampai spawn!")
     end)
 end)
 
@@ -89,10 +109,7 @@ lib:AddToggle(LuckyBlocks.scroll, "Auto Collect", "Otomatis collect dari plot", 
                 end
             end
 
-            if not myPlot then
-                warn("[AutoCollect] Plot tidak ditemukan!")
-                return
-            end
+            if not myPlot then warn("[AutoCollect] Plot tidak ditemukan!") return end
 
             local function collectAll()
                 repeat task.wait() until player.Character
