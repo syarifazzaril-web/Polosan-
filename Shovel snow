@@ -41,3 +41,62 @@ lib:AddToggle(ShovelSnow.scroll, "Auto Rebirth", "Otomatis Rebirth", false, func
         end)
     end
 end)
+
+lib:AddToggle(ShovelSnow.scroll, "Auto Dupe", "Otomatis dupe item", false, function(Value)
+    _G.AutoDupeSnow = Value
+    if Value then
+        task.spawn(function()
+            local player = game.Players.LocalPlayer
+            local char = player.Character or player.CharacterAdded:Wait()
+            local hrp = char:WaitForChild("HumanoidRootPart")
+
+            -- Cari PlacePrompt terdekat
+            local closestPrompt = nil
+            local closestDist = math.huge
+
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("ProximityPrompt") and v.Name == "PlacePrompt" then
+                    local part = v.Parent
+                    if part and part:IsA("BasePart") then
+                        local dist = (hrp.Position - part.Position).Magnitude
+                        if dist < closestDist then
+                            closestDist = dist
+                            closestPrompt = v
+                        end
+                    end
+                end
+            end
+
+            if not closestPrompt then
+                warn("[AutoDupe] PlacePrompt tidak ditemukan!")
+                _G.AutoDupeSnow = false
+                return
+            end
+
+            closestPrompt.MaxActivationDistance = 999
+            fireproximityprompt(closestPrompt, 1)
+            print("[AutoDupe] Place executed")
+
+            task.wait(1)
+
+            -- Cari semua SwapPrompt
+            local swaps = {}
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("ProximityPrompt") and v.Name == "SwapPrompt" then
+                    v.MaxActivationDistance = 999
+                    table.insert(swaps, v)
+                end
+            end
+
+            print("[AutoDupe] SwapPrompt ditemukan:", #swaps)
+
+            -- Loop swap selama toggle aktif
+            while _G.AutoDupeSnow do
+                for _, prompt in pairs(swaps) do
+                    fireproximityprompt(prompt, 1)
+                end
+                task.wait(0.002)
+            end
+        end)
+    end
+end)
