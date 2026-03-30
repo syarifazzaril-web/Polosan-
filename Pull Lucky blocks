@@ -4,26 +4,79 @@
 local lib = _G.RilzHub
 local LuckyBlocks = _G.LuckyBlocksTab
 
+-- ==========================================
+-- AUTO BEST LUCKY BLOCKS
+-- ==========================================
 lib:AddToggle(LuckyBlocks.scroll, "Auto Best Lucky Blocks", "Otomatis pull lucky block terbaik", false, function(Value)
-    _G.AutoDumbell = Value
+    _G.AutoBestLucky = Value
     if Value then
-        local remote = game:GetService("ReplicatedStorage")
-            :WaitForChild("SharedModules")
-            :WaitForChild("Network")
-            :WaitForChild("Remotes")
-            :WaitForChild("Activate Dumbell")
-
         task.spawn(function()
-            while _G.AutoDumbell do
-                pcall(function()
-                    remote:FireServer()
-                end)
-                task.wait(0.1)
+            local Players = game:GetService("Players")
+            local player = Players.LocalPlayer
+            repeat task.wait() until player.Character
+            local hrp = player.Character:WaitForChild("HumanoidRootPart")
+
+            local friends = game:GetService("Workspace"):FindFirstChild("Live") and
+                            game:GetService("Workspace"):FindFirstChild("Live"):FindFirstChild("Friends")
+
+            if not friends then
+                warn("[AutoBestLucky] Folder Friends tidak ditemukan!")
+                return
+            end
+
+            local priority = {
+                ["Divine Lucky Block"]        = 1,
+                ["OG Lucky Block"]            = 2,
+                ["Exclusive Lucky Block"]     = 3,
+                ["Brainrot God Lucky Block"]  = 4,
+                ["Los Secret Lucky Block"]    = 5,
+                ["Secret Lucky Block"]        = 6,
+                ["Mythic Lucky Block"]        = 7,
+                ["Legendary Lucky Block"]     = 8,
+                ["Epic Lucky Block"]          = 9,
+                ["Rare Lucky Block"]          = 10,
+                ["Common Lucky Block"]        = 11,
+            }
+
+            local function getSortedBlocks()
+                local list = {}
+                for _, block in pairs(friends:GetChildren()) do
+                    local p = priority[block.Name]
+                    if p then
+                        table.insert(list, {block = block, p = p})
+                    end
+                end
+                table.sort(list, function(a, b) return a.p < b.p end)
+                return list
+            end
+
+            while _G.AutoBestLucky do
+                repeat task.wait() until player.Character
+                hrp = player.Character:WaitForChild("HumanoidRootPart")
+
+                local sorted = getSortedBlocks()
+                if #sorted > 0 then
+                    local best = sorted[1].block
+                    local rp = best:FindFirstChild("RootPart")
+                    if rp then
+                        local pos = rp.CFrame.Position
+                        hrp.CFrame = CFrame.new(pos.X, pos.Y + 5, pos.Z)
+                        task.wait(0.3)
+                        local prompt = rp:FindFirstChild("StealPrompt")
+                        if prompt then
+                            pcall(fireproximityprompt, prompt)
+                        end
+                    end
+                end
+                task.wait(0.5)
             end
         end)
     end
 end)
 
+-- ==========================================
+-- AUTO COLLECT
+-- ==========================================
 lib:AddToggle(LuckyBlocks.scroll, "Auto Collect", "Otomatis collect dari plot", false, function(Value)
     _G.AutoCollectLucky = Value
     if Value then
@@ -50,13 +103,10 @@ lib:AddToggle(LuckyBlocks.scroll, "Auto Collect", "Otomatis collect dari plot", 
                 warn("[AutoFarm] Plot tidak ditemukan!")
                 return
             end
-            print("[AutoFarm] Plot ditemukan: " .. myPlot.Name)
 
             local function collectAll()
                 repeat task.wait() until player.Character
                 hrp = player.Character:WaitForChild("HumanoidRootPart")
-
-                local count = 0
                 local collectPads = myPlot:FindFirstChild("CollectPads")
                 if collectPads then
                     for _, model in pairs(collectPads:GetChildren()) do
@@ -67,12 +117,10 @@ lib:AddToggle(LuckyBlocks.scroll, "Auto Collect", "Otomatis collect dari plot", 
                             if obj:IsA("BasePart") then
                                 pcall(firetouchinterest, hrp, obj, 0)
                                 pcall(firetouchinterest, hrp, obj, 1)
-                                count = count + 1
                             end
                         end
                     end
                 end
-                print("[AutoFarm] Collected " .. count .. " pads!")
             end
 
             while _G.AutoCollectLucky do
@@ -83,6 +131,9 @@ lib:AddToggle(LuckyBlocks.scroll, "Auto Collect", "Otomatis collect dari plot", 
     end
 end)
 
+-- ==========================================
+-- AUTO REBIRTH
+-- ==========================================
 lib:AddToggle(LuckyBlocks.scroll, "Auto Rebirth", "Otomatis Rebirth", false, function(Value)
     _G.AutoRebirthLucky = Value
     if Value then
@@ -103,6 +154,9 @@ lib:AddToggle(LuckyBlocks.scroll, "Auto Rebirth", "Otomatis Rebirth", false, fun
     end
 end)
 
+-- ==========================================
+-- AUTO STRENGTH
+-- ==========================================
 lib:AddToggle(LuckyBlocks.scroll, "Auto Strength", "Otomatis farming strength", false, function(Value)
     _G.AutoStrength = Value
     if Value then
