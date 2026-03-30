@@ -12,7 +12,7 @@ lib:AddToggle(ShovelSnow.scroll, "Auto Buy Damage", "Otomatis beli upgrade Damag
         task.spawn(function()
             while _G.AutoBuyDamage do
                 Remotes:WaitForChild("BuyUpgradeEvent"):FireServer("Damage", 500)
-                task.wait(0.001)
+                task.wait(0.01)
             end
         end)
     end
@@ -95,7 +95,7 @@ lib:AddToggle(ShovelSnow.scroll, "Auto Dupe", "Otomatis dupe item", false, funct
                 for _, prompt in pairs(swaps) do
                     fireproximityprompt(prompt, 1)
                 end
-                task.wait(0.002)
+                task.wait(0.02)
             end
         end)
     end
