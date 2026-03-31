@@ -1,0 +1,109 @@
+-- [[ Rilzz Hub ]] --
+-- TAB: BEA A BRAINROT
+
+local lib = _G.RilzHub
+local BeaBrainrot = lib:AddTab("Bea a brainrot")
+
+lib:AddToggle(BeaBrainrot.scroll, "Teleport Spawn", "Teleport ke spawn", false, function(Value)
+    if Value then
+        local Players = game:GetService("Players")
+        local player = Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local hrp = character:WaitForChild("HumanoidRootPart")
+
+        hrp.CFrame = CFrame.new(753.5509643554688, 38.71457290649414, -2126.275390625)
+    end
+end)
+
+lib:AddToggle(BeaBrainrot.scroll, "Auto Best Brainrot", "Otomatis ambil brainrot terbaik", false, function(Value)
+    _autobrainrot = Value
+    if Value then
+        task.spawn(function()
+            repeat task.wait() until game:IsLoaded()
+
+            local Players = game:GetService("Players")
+            local player = Players.LocalPlayer
+
+            local function getHRP()
+                local char = player.Character or player.CharacterAdded:Wait()
+                return char:WaitForChild("HumanoidRootPart")
+            end
+
+            local stealPos = CFrame.new(
+                -444.00848388671875,
+                40.603614807128906,
+                -2120.693115234375
+            )
+
+            local myBase = CFrame.new(
+                753.5509643554688,
+                38.71457290649414,
+                -2126.275390625
+            )
+
+            local function tp(cf)
+                getHRP().CFrame = cf
+            end
+
+            local function parseValue(text)
+                local num = tonumber(string.match(text, "%d+%.?%d*"))
+                if not num then return 0 end
+
+                if text:find("T") then num *= 1e12
+                elseif text:find("B") then num *= 1e9
+                elseif text:find("M") then num *= 1e6
+                elseif text:find("K") then num *= 1e3
+                end
+
+                return num
+            end
+
+            while _autobrainrot do
+                tp(stealPos)
+
+                local bestPrompt
+                local bestValue = 0
+
+                while _autobrainrot and not bestPrompt do
+                    for _, label in pairs(workspace:GetDescendants()) do
+                        if label:IsA("TextLabel") and label.Text:find("/s") then
+                            local model = label:FindFirstAncestorOfClass("Model")
+                            if not model then continue end
+
+                            local part = model:FindFirstChildWhichIsA("BasePart")
+                            if not part then continue end
+
+                            local dist = (part.Position - stealPos.Position).Magnitude
+                            if dist > 40 then continue end
+
+                            local value = parseValue(label.Text)
+                            if value >= 1e11 then continue end
+
+                            if value > bestValue then
+                                local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                if prompt then
+                                    bestValue = value
+                                    bestPrompt = prompt
+                                end
+                            end
+                        end
+                    end
+                    task.wait(0.2)
+                end
+
+                if bestPrompt then
+                    local part = bestPrompt.Parent
+                    if part:IsA("BasePart") then
+                        tp(part.CFrame + Vector3.new(0, 3, 0))
+                        task.wait(0.2)
+                        fireproximityprompt(bestPrompt)
+                    end
+                end
+
+                task.wait(0.5)
+                tp(myBase)
+                task.wait(1)
+            end
+        end)
+    end
+end)
