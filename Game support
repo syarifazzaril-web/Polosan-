@@ -10,6 +10,7 @@ local gameSupport = {
     [77691995204147]  = "SHOVEL SNOW FOR BRAINROT",
     [80861715191104]  = "PULL LUCKY BLOCKS",
     [105626692504093] = "BEA A BRAINROT",
+    [112259901434347] = "+1 BE A LUCKY BLOCKS",
 }
 
 local supportedGame = gameSupport[currentPlaceId]
@@ -34,7 +35,7 @@ if not supportedGame then
     label.Size = UDim2.new(1, 0, 1, 0)
     label.Position = UDim2.new(0, 0, 0, 0)
     label.BackgroundTransparency = 1
-    label.Text = "❌ Game Tidak Support ❌\n\nRilzz Hub hanya support:\n• Shrink For Brainrot\n• Get Strong For Brainrot\n• Open Sea For Brainrot\n• Shovel Snow For Brainrot\n• Pull Lucky Blocks\n• Bea A Brainrot"
+    label.Text = "❌ Game Tidak Support ❌\n\nRilzz Hub hanya support:\n• Shrink For Brainrot\n• Get Strong For Brainrot\n• Open Sea For Brainrot\n• Shovel Snow For Brainrot\n• Pull Lucky Blocks\n• Bea A Brainrot\n• +1 Be A Lucky Blocks"
     label.TextColor3 = Color3.fromRGB(255, 255, 255)
     label.TextSize = 22
     label.Font = Enum.Font.GothamBold
