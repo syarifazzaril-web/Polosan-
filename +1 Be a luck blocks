@@ -7,9 +7,37 @@ local LuckyBe = lib:AddTab("+1 Be a lucky blocks")
 lib:AddButton(LuckyBe.scroll, "Dupe", "Klik untuk dupe", function()
     repeat task.wait() until game:IsLoaded()
 
-    local player = game.Players.LocalPlayer
-    local char = player.Character or player.CharacterAdded:Wait()
-    local hrp = char:WaitForChild("HumanoidRootPart")
+    local Players = game:GetService("Players")
+    local player = Players.LocalPlayer
+
+    local bases = {
+        Vector3.new(-47.4004058378906, 5.335516452789307, 28.480764389038086),
+        Vector3.new(-102.54472351074219, 5.260526180267334, 29.12882423040879),
+        Vector3.new(-156.66241455078125, 5.3355278968811035, 31.05963897705078),
+        Vector3.new(-212.40399169921875, 5.298027515411377, 29.95789337158203)
+    }
+
+    local function getHRP()
+        local char = player.Character or player.CharacterAdded:Wait()
+        return char:WaitForChild("HumanoidRootPart")
+    end
+
+    local hrp = getHRP()
+
+    local lockedBase
+    local shortest = math.huge
+
+    for _, pos in ipairs(bases) do
+        local dist = (hrp.Position - pos).Magnitude
+        if dist < shortest then
+            shortest = dist
+            lockedBase = pos
+        end
+    end
+
+    print("Base locked:", lockedBase)
+    hrp.CFrame = CFrame.new(lockedBase)
+    task.wait(0.15)
 
     local closestPrompt
     local distance = math.huge
@@ -27,16 +55,16 @@ lib:AddButton(LuckyBe.scroll, "Dupe", "Klik untuk dupe", function()
         end
     end
 
-    if closestPrompt then
-        fireproximityprompt(closestPrompt)
+    local hum = player.Character:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.Health = 0
     end
 
-    task.delay(0.05, function()
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum then
-            hum.Health = 0
-        end
-    end)
+    if closestPrompt then
+        fireproximityprompt(closestPrompt, 0)
+        fireproximityprompt(closestPrompt, 0)
+        fireproximityprompt(closestPrompt, 0)
+    end
 end)
 
 lib:AddToggle(LuckyBe.scroll, "Auto Brainrot", "Otomatis teleport farming brainrot", false, function(Value)
