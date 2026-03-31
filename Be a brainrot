@@ -4,15 +4,12 @@
 local lib = _G.RilzHub
 local BeaBrainrot = lib:AddTab("Bea a brainrot")
 
-lib:AddToggle(BeaBrainrot.scroll, "Teleport Spawn", "Teleport ke spawn", false, function(Value)
-    if Value then
-        local Players = game:GetService("Players")
-        local player = Players.LocalPlayer
-        local character = player.Character or player.CharacterAdded:Wait()
-        local hrp = character:WaitForChild("HumanoidRootPart")
-
-        hrp.CFrame = CFrame.new(753.5509643554688, 38.71457290649414, -2126.275390625)
-    end
+lib:AddButton(BeaBrainrot.scroll, "Teleport Spawn", "Teleport ke spawn", function()
+    local Players = game:GetService("Players")
+    local player = Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    hrp.CFrame = CFrame.new(753.5509643554688, 38.71457290649414, -2126.275390625)
 end)
 
 lib:AddToggle(BeaBrainrot.scroll, "Auto Best Brainrot", "Otomatis ambil brainrot terbaik", false, function(Value)
@@ -88,7 +85,7 @@ lib:AddToggle(BeaBrainrot.scroll, "Auto Best Brainrot", "Otomatis ambil brainrot
                             end
                         end
                     end
-                    task.wait(0.2)
+                    task.wait(0.1)
                 end
 
                 if bestPrompt then
