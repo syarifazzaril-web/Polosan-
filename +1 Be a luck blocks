@@ -1,0 +1,156 @@
+-- [[ Rilzz Hub ]] --
+-- TAB: +1 BE A LUCKY BLOCKS
+
+local lib = _G.RilzHub
+local LuckyBe = lib:AddTab("+1 Be a lucky blocks")
+
+lib:AddButton(LuckyBe.scroll, "Dupe", "Klik untuk dupe", function()
+    repeat task.wait() until game:IsLoaded()
+
+    local player = game.Players.LocalPlayer
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+
+    local closestPrompt
+    local distance = math.huge
+
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("ProximityPrompt") then
+            local part = v.Parent
+            if part and part:IsA("BasePart") then
+                local dist = (hrp.Position - part.Position).Magnitude
+                if dist < distance then
+                    distance = dist
+                    closestPrompt = v
+                end
+            end
+        end
+    end
+
+    if closestPrompt then
+        fireproximityprompt(closestPrompt)
+    end
+
+    task.delay(0.05, function()
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.Health = 0
+        end
+    end)
+end)
+
+lib:AddToggle(LuckyBe.scroll, "Auto Brainrot", "Otomatis teleport farming brainrot", false, function(Value)
+    _autoTP = Value
+    if Value then
+        task.spawn(function()
+            local Players = game:GetService("Players")
+            local player = Players.LocalPlayer
+
+            local function getHRP()
+                local char = player.Character or player.CharacterAdded:Wait()
+                return char:WaitForChild("HumanoidRootPart")
+            end
+
+            local posA = CFrame.new(
+                -106.86107635498047,
+                13.407323837280273,
+                -1244.5692138671875
+            )
+
+            local posB = CFrame.new(
+                -109.15310668945312,
+                4.49802827835083,
+                -47.55513000488281
+            )
+
+            while _autoTP do
+                getHRP().CFrame = posA
+                task.wait(1)
+                if not _autoTP then break end
+
+                getHRP().CFrame = posA
+                task.wait(10)
+                if not _autoTP then break end
+
+                getHRP().CFrame = posB
+                task.wait(1)
+            end
+        end)
+    end
+end)
+
+lib:AddToggle(LuckyBe.scroll, "Auto Steps", "Otomatis farming steps", false, function(Value)
+    _autoSteps = Value
+    if Value then
+        task.spawn(function()
+            repeat task.wait() until game:IsLoaded()
+
+            local remote = game:GetService("ReplicatedStorage")
+                :WaitForChild("Packages")
+                :WaitForChild("_Index")
+                :WaitForChild("sleitnick_knit@1.7.0")
+                :WaitForChild("knit")
+                :WaitForChild("Services")
+                :WaitForChild("StepsService")
+                :WaitForChild("RF")
+                :WaitForChild("AddSteps")
+
+            while _autoSteps do
+                remote:InvokeServer()
+                task.wait(0.02)
+            end
+        end)
+    end
+end)
+
+lib:AddToggle(LuckyBe.scroll, "Auto Rebirth", "Otomatis Rebirth", false, function(Value)
+    _autoRebirth = Value
+    if Value then
+        task.spawn(function()
+            repeat task.wait() until game:IsLoaded()
+
+            local remote = game:GetService("ReplicatedStorage")
+                :WaitForChild("Packages")
+                :WaitForChild("_Index")
+                :WaitForChild("sleitnick_knit@1.7.0")
+                :WaitForChild("knit")
+                :WaitForChild("Services")
+                :WaitForChild("RebirthService")
+                :WaitForChild("RF")
+                :WaitForChild("RequestRebirth")
+
+            while _autoRebirth do
+                pcall(function()
+                    remote:InvokeServer()
+                end)
+                task.wait(1)
+            end
+        end)
+    end
+end)
+
+lib:AddToggle(LuckyBe.scroll, "Auto Buy Speed", "Otomatis beli speed upgrade", false, function(Value)
+    _autoXp = Value
+    if Value then
+        task.spawn(function()
+            repeat task.wait() until game:IsLoaded()
+
+            local remote = game:GetService("ReplicatedStorage")
+                :WaitForChild("Packages")
+                :WaitForChild("_Index")
+                :WaitForChild("sleitnick_knit@1.7.0")
+                :WaitForChild("knit")
+                :WaitForChild("Services")
+                :WaitForChild("XpBoostService")
+                :WaitForChild("RF")
+                :WaitForChild("RequestPurchase")
+
+            while _autoXp do
+                pcall(function()
+                    remote:InvokeServer("+10Xp")
+                end)
+                task.wait(1)
+            end
+        end)
+    end
+end)
