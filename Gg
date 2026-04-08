@@ -1,0 +1,130 @@
+repeat task.wait() until game:IsLoaded()
+
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Rilzz Hub",
+   LoadingTitle = "Rilzz Hub",
+   LoadingSubtitle = "System",
+   ConfigurationSaving = {
+      Enabled = false
+   }
+})
+
+-- =========================
+-- TAB MAIN
+-- =========================
+local Tab = Window:CreateTab("Main", 4483362458)
+
+-- DUPE
+Tab:CreateButton({
+   Name = "Dupe",
+   Callback = function()
+
+      local player = game.Players.LocalPlayer
+
+      local char = player.Character
+      if char then
+         local hum = char:FindFirstChildOfClass("Humanoid")
+         if hum then
+            hum.Health = 0
+         end
+      end
+
+      for i = 1,7 do
+         task.wait(0.3)
+
+         local char = player.Character
+         if not char then continue end
+
+         local hrp = char:FindFirstChild("HumanoidRootPart")
+         if not hrp then continue end
+
+         for _,v in pairs(workspace:GetDescendants()) do
+            if v:IsA("ProximityPrompt") then
+               local parent = v.Parent
+
+               if parent and parent:IsA("BasePart") then
+                  local dist = (hrp.Position - parent.Position).Magnitude
+
+                  if dist <= 10 then
+                     fireproximityprompt(v)
+                     return
+                  end
+               end
+            end
+         end
+      end
+
+   end
+})
+
+-- AUTO SELL ALL
+Tab:CreateButton({
+   Name = "Auto Sell All",
+   Callback = function()
+
+      game:GetService("ReplicatedStorage")
+      :WaitForChild("Events")
+      :WaitForChild("RequestSell")
+      :FireServer("Inventory")
+
+   end
+})
+
+-- AUTO COLLECT
+local AutoCollect = false
+
+Tab:CreateToggle({
+   Name = "Auto Collect",
+   CurrentValue = false,
+   Flag = "AutoCollect",
+   Callback = function(Value)
+
+      AutoCollect = Value
+
+      if AutoCollect then
+         task.spawn(function()
+
+            local player = game.Players.LocalPlayer
+
+            while AutoCollect do
+               local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+
+               if hrp then
+                  for _, v in pairs(workspace:GetDescendants()) do
+                     if v:IsA("BasePart") and v.Name == "CollectTouch" then
+                        firetouchinterest(hrp, v, 0)
+                        firetouchinterest(hrp, v, 1)
+                     end
+                  end
+               end
+
+               task.wait(0.01)
+            end
+
+         end)
+      end
+
+   end
+})
+
+-- =========================
+-- TAB TELEPORT
+-- =========================
+local TeleportTab = Window:CreateTab("Teleport", 4483362458)
+
+
+-- SPAWN
+TeleportTab:CreateButton({
+   Name = "Spawn",
+   Callback = function()
+
+      local player = game.Players.LocalPlayer
+      local char = player.Character or player.CharacterAdded:Wait()
+      local root = char:WaitForChild("HumanoidRootPart")
+
+      root.CFrame = CFrame.new(-0.5666130185127258, 11.629980087280273, 21.151683807373047)
+
+   end
+})
