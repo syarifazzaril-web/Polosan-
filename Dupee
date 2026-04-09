@@ -1,0 +1,95 @@
+local player = game.Players.LocalPlayer
+
+-- ================= GUI =================
+
+local gui = Instance.new("ScreenGui")
+gui.Parent = game.CoreGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0,200,0,80)
+frame.Position = UDim2.new(0.5,-100,0.5,-40)
+frame.BackgroundColor3 = Color3.fromRGB(200,0,0)
+frame.BorderSizePixel = 0
+frame.Parent = gui
+frame.Active = true
+frame.Draggable = true
+
+-- kotak merah
+local box = Instance.new("Frame")
+box.Size = UDim2.new(1,-20,1,-20)
+box.Position = UDim2.new(0,10,0,10)
+box.BackgroundColor3 = Color3.fromRGB(255,0,0)
+box.Parent = frame
+
+-- kotak transparan (button)
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(1,0,1,0)
+button.BackgroundTransparency = 1
+button.Text = "Start"
+button.TextScaled = true
+button.TextColor3 = Color3.new(1,1,1)
+button.Font = Enum.Font.SourceSansBold
+button.Parent = box
+
+-- ================= SYSTEM =================
+
+local running = false
+
+button.MouseButton1Click:Connect(function()
+	running = not running
+	
+	if running then
+		button.Text = "Running"
+	else
+		button.Text = "Start"
+	end
+end)
+
+local function equipBrainrot()
+    local char = player.Character
+    local backpack = player:FindFirstChild("Backpack")
+    
+    if not char or not backpack then return end
+    
+    if char:FindFirstChildOfClass("Tool") then return end
+    
+    for _,tool in pairs(backpack:GetChildren()) do
+        if tool:IsA("Tool") then
+            tool.Parent = char
+            break
+        end
+    end
+end
+
+-- ================= LOOP =================
+
+while task.wait(0.3) do
+	if not running then continue end
+	
+    local char = player.Character
+    if not char then continue end
+    
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then continue end
+
+    -- 1️⃣ Pegang brainrot
+    equipBrainrot()
+
+    -- 2️⃣ Place
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("ProximityPrompt") then
+            
+            local part = v:FindFirstAncestorWhichIsA("BasePart")
+            
+            if part then
+                local dist = (root.Position - part.Position).Magnitude
+                
+                if dist <= 10 then
+                    fireproximityprompt(v)
+                    break
+                end
+            end
+            
+        end
+    end
+end
