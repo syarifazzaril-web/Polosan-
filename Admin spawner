@@ -1,0 +1,360 @@
+--// GLOBAL
+getgenv().SpawnerData = getgenv().SpawnerData or {
+    text = "",
+    history = {},
+    indexCache = {},
+    queue = {}
+}
+local data = getgenv().SpawnerData
+
+--// CONFIG
+local types = {"Normal","Golden","Diamond","Candy"}
+local rarities = {"Common","Uncommon","Rare","Epic","Legendary","Mythical","Godly","Secret","Exclusive"}
+
+local HttpService = game:GetService("HttpService")
+local FILE_NAME = "spawner_history.json"
+
+-- LOAD HISTORY
+pcall(function()
+    if readfile and isfile(FILE_NAME) then
+        data.history = HttpService:JSONDecode(readfile(FILE_NAME))
+    end
+end)
+
+local function saveHistory()
+    if writefile then
+        writefile(FILE_NAME, HttpService:JSONEncode(data.history))
+    end
+end
+
+-- CLEAN GUI
+if game.CoreGui:FindFirstChild("AdminPanel") then
+    game.CoreGui.AdminPanel:Destroy()
+end
+
+-- GUI
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "AdminPanel"
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,420,0,460)
+frame.Position = UDim2.new(0.5,-210,0.5,-230)
+frame.BackgroundColor3 = Color3.fromRGB(12,12,18)
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner", frame)
+
+-- TITLE
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,40)
+title.Text = "⚡ ADMIN PANEL"
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(120,170,255)
+
+-- CAPITALIZE
+local function cap(str)
+    return (str:gsub("(%a)([%w']*)", function(a,b)
+        return a:upper()..b:lower()
+    end))
+end
+
+-- INPUT
+local box = Instance.new("TextBox", frame)
+box.Size = UDim2.new(1,-20,0,30)
+box.Position = UDim2.new(0,10,0,50)
+box.BackgroundColor3 = Color3.fromRGB(20,20,30)
+box.TextColor3 = Color3.fromRGB(230,230,255)
+box.TextXAlignment = Enum.TextXAlignment.Left
+box.ClearTextOnFocus = false
+box.Text = data.text
+
+local isTyping = false
+box.Focused:Connect(function() isTyping = true end)
+box.FocusLost:Connect(function()
+    isTyping = false
+    data.text = cap(box.Text)
+    box.Text = data.text
+end)
+
+-- AUTOCOMPLETE
+local suggest = Instance.new("ScrollingFrame", frame)
+suggest.Size = UDim2.new(1,-20,0,0)
+suggest.Position = UDim2.new(0,10,0,85)
+suggest.BackgroundColor3 = Color3.fromRGB(15,15,25)
+Instance.new("UICorner", suggest)
+
+local layout = Instance.new("UIListLayout", suggest)
+
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    suggest.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y)
+    suggest.Size = UDim2.new(1,-20,0,math.clamp(layout.AbsoluteContentSize.Y,0,80))
+end)
+
+local function updateSuggest(t)
+    for _,v in pairs(suggest:GetChildren()) do
+        if v:IsA("TextButton") then v:Destroy() end
+    end
+
+    local count = 0
+    for _,n in ipairs(data.indexCache) do
+        if n:lower():find(t:lower()) then
+            count += 1
+            if count > 8 then break end
+
+            local b = Instance.new("TextButton", suggest)
+            b.Size = UDim2.new(1,-6,0,22)
+            b.Text = "   "..n
+            b.BackgroundColor3 = Color3.fromRGB(25,25,35)
+            b.TextColor3 = Color3.fromRGB(200,200,255)
+
+            b.MouseButton1Click:Connect(function()
+                box.Text = n
+                data.text = n
+            end)
+        end
+    end
+end
+
+box:GetPropertyChangedSignal("Text"):Connect(function()
+    if isTyping then
+        local cur = box.CursorPosition
+        local new = cap(box.Text)
+
+        if new ~= box.Text then
+            box.Text = new
+            box.CursorPosition = cur
+        end
+
+        data.text = box.Text
+        updateSuggest(box.Text)
+    end
+end)
+
+-- TYPE & RARITY
+local tIndex, rIndex = 1,1
+
+local typeBtn = Instance.new("TextButton", frame)
+typeBtn.Size = UDim2.new(1,-20,0,30)
+typeBtn.Position = UDim2.new(0,10,0,140)
+typeBtn.BackgroundColor3 = Color3.fromRGB(25,25,35)
+typeBtn.TextColor3 = Color3.fromRGB(180,200,255)
+
+local rarityBtn = Instance.new("TextButton", frame)
+rarityBtn.Size = UDim2.new(1,-20,0,30)
+rarityBtn.Position = UDim2.new(0,10,0,175)
+rarityBtn.BackgroundColor3 = Color3.fromRGB(25,25,35)
+rarityBtn.TextColor3 = Color3.fromRGB(180,200,255)
+
+local function updateTR()
+    typeBtn.Text = "Type: "..types[tIndex]
+    rarityBtn.Text = "Rarity: "..rarities[rIndex]
+end
+
+typeBtn.MouseButton1Click:Connect(function()
+    tIndex = tIndex % #types + 1
+    updateTR()
+end)
+
+rarityBtn.MouseButton1Click:Connect(function()
+    rIndex = rIndex % #rarities + 1
+    updateTR()
+end)
+
+updateTR()
+
+-- SPAWN BUTTON
+local spawnBtn = Instance.new("TextButton", frame)
+spawnBtn.Size = UDim2.new(1,-20,0,35)
+spawnBtn.Position = UDim2.new(0,10,0,215)
+spawnBtn.Text = "SPAWN"
+
+-- POPUP
+local popup = Instance.new("Frame", gui)
+popup.Size = UDim2.new(0,230,0,120)
+popup.Position = UDim2.new(0.5,-115,0.5,-60)
+popup.BackgroundColor3 = Color3.fromRGB(15,15,25)
+popup.Visible = false
+Instance.new("UICorner", popup)
+
+local amount = Instance.new("TextBox", popup)
+amount.Size = UDim2.new(1,-20,0,28)
+amount.Position = UDim2.new(0,10,0,10)
+amount.PlaceholderText = "Jumlah..."
+
+local confirm = Instance.new("TextButton", popup)
+confirm.Size = UDim2.new(0.45,-5,0,30)
+confirm.Position = UDim2.new(0,10,0,60)
+confirm.Text = "CONFIRM"
+
+local cancel = Instance.new("TextButton", popup)
+cancel.Size = UDim2.new(0.45,-5,0,30)
+cancel.Position = UDim2.new(0.5,5,0,60)
+cancel.Text = "CANCEL"
+
+spawnBtn.MouseButton1Click:Connect(function()
+    frame.Visible = false
+    popup.Visible = true
+end)
+
+cancel.MouseButton1Click:Connect(function()
+    popup.Visible = false
+    frame.Visible = true
+end)
+
+-- HISTORY
+local historyFrame = Instance.new("ScrollingFrame", frame)
+historyFrame.Size = UDim2.new(1,-20,0,120)
+historyFrame.Position = UDim2.new(0,10,0,260)
+historyFrame.BackgroundColor3 = Color3.fromRGB(15,15,20)
+Instance.new("UICorner", historyFrame)
+
+local lay = Instance.new("UIListLayout", historyFrame)
+lay.Padding = UDim.new(0,3)
+
+local function refreshHistory()
+    for _,v in pairs(historyFrame:GetChildren()) do
+        if v:IsA("TextButton") then v:Destroy() end
+    end
+
+    for _,txt in ipairs(data.history) do
+        local b = Instance.new("TextButton", historyFrame)
+        b.Size = UDim2.new(1,-6,0,24)
+        b.Text = "   "..txt
+        b.BackgroundColor3 = Color3.fromRGB(20,20,30)
+        b.TextColor3 = Color3.fromRGB(200,200,255)
+
+        b.MouseButton1Click:Connect(function()
+            box.Text = txt
+            data.text = txt
+        end)
+    end
+end
+
+local function addHistory(text)
+    for i,v in ipairs(data.history) do
+        if v == text then table.remove(data.history,i) break end
+    end
+    table.insert(data.history,1,text)
+    if #data.history > 10 then table.remove(data.history) end
+    saveHistory()
+    refreshHistory()
+end
+
+refreshHistory()
+
+-- CLEAR HISTORY (FIX)
+local clear = Instance.new("TextButton", frame)
+clear.Size = UDim2.new(1,-20,0,25)
+clear.Position = UDim2.new(0,10,1,-30)
+clear.Text = "Clear History"
+clear.BackgroundColor3 = Color3.fromRGB(30,20,20)
+clear.TextColor3 = Color3.fromRGB(255,170,170)
+
+clear.MouseButton1Click:Connect(function()
+    data.history = {}
+    saveHistory()
+    refreshHistory()
+end)
+
+-- QUEUE
+task.spawn(function()
+    while true do
+        if #data.queue > 0 then
+            local job = table.remove(data.queue,1)
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("Events")
+                :WaitForChild("RewardEscape")
+                :FireServer(job.name, job.type, job.rarity)
+            task.wait(0.1)
+        else
+            task.wait(0.2)
+        end
+    end
+end)
+
+-- NOTIF
+local notif = Instance.new("TextLabel", gui)
+notif.Size = UDim2.new(0,250,0,40)
+notif.Position = UDim2.new(0.5,-125,0,20)
+notif.Visible = false
+Instance.new("UICorner", notif)
+
+local function showNotif(text, color)
+    notif.Text = text
+    notif.BackgroundColor3 = color
+    notif.TextColor3 = Color3.new(1,1,1)
+    notif.Visible = true
+    task.delay(2,function() notif.Visible = false end)
+end
+
+local function checkInventory(name)
+    local p = game.Players.LocalPlayer
+    local bp = p:FindFirstChild("Backpack")
+    if bp then
+        for _,v in pairs(bp:GetChildren()) do
+            if v.Name == name then return true end
+        end
+    end
+    return false
+end
+
+-- CONFIRM
+confirm.MouseButton1Click:Connect(function()
+    local name = data.text
+    local amt = tonumber(amount.Text)
+    if not name or not amt then return end
+
+    for i=1,amt do
+        table.insert(data.queue,{
+            name=name,
+            type=types[tIndex],
+            rarity=rarities[rIndex]
+        })
+    end
+
+    addHistory(name)
+
+    popup.Visible=false
+    frame.Visible=true
+
+    task.spawn(function()
+        task.wait(2)
+        if checkInventory(name) then
+            showNotif("✅ Sukses: "..name, Color3.fromRGB(20,80,40))
+        else
+            showNotif("❌ Failed: "..name, Color3.fromRGB(80,20,20))
+        end
+    end)
+end)
+
+-- MINIMIZE RGB
+local miniBtn = Instance.new("TextButton", gui)
+miniBtn.Size = UDim2.new(0,110,0,45)
+miniBtn.Position = UDim2.new(0,20,0.5,-20)
+miniBtn.Text = "OPEN PANEL"
+miniBtn.Visible = false
+Instance.new("UICorner", miniBtn)
+
+task.spawn(function()
+    local h=0
+    while true do
+        h+=0.01
+        miniBtn.BackgroundColor3 = Color3.fromHSV(h,1,1)
+        task.wait(0.05)
+    end
+end)
+
+local open=true
+local function toggle()
+    open=not open
+    frame.Visible=open
+    miniBtn.Visible=not open
+end
+
+local closeBtn = Instance.new("TextButton", frame)
+closeBtn.Size = UDim2.new(0,35,0,35)
+closeBtn.Position = UDim2.new(1,-40,0,5)
+closeBtn.Text="-"
+
+closeBtn.MouseButton1Click:Connect(toggle)
+miniBtn.MouseButton1Click:Connect(toggle)
