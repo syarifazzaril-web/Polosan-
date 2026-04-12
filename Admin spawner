@@ -8,7 +8,7 @@ getgenv().SpawnerData = getgenv().SpawnerData or {
 local data = getgenv().SpawnerData
 
 --// CONFIG
-local types = {"Normal","Golden","Diamond","Candy"}
+local types = {"Normal","Golden","Diamond","Candy","Ruby","Neon"}
 local rarities = {"Common","Uncommon","Rare","Epic","Legendary","Mythical","Godly","Secret","Exclusive"}
 
 local HttpService = game:GetService("HttpService")
