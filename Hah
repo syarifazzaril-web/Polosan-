@@ -1,0 +1,89 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+
+local network = game:GetService("ReplicatedStorage")
+    :WaitForChild("Shared")
+    :WaitForChild("Packages")
+    :WaitForChild("Network")
+
+local kickEvent = network:WaitForChild("rev_KickEvent")
+
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Rilzz Hub",
+    LoadingTitle = "Rilzz Hub",
+    LoadingSubtitle = "by Rilzz",
+    Theme = "Default",
+    DisableRayfieldPrompts = false,
+    DisableBuildWarnings = false,
+})
+
+local Tab = Window:CreateTab("Main", 4483362458)
+
+local running = false
+
+local kickTP  = Vector3.new(699.768, 3.167, 231.199)
+local fotoTP  = Vector3.new(-2437.54736328125, 50.16676330566406, 295.8621520996094)
+local claimTP = Vector3.new(714.386, 3.167, 167.385)
+local movePos = Vector3.new(708.052, 3.167, 188.172)
+
+local function forceTP(root, hum, pos)
+    local oldWalk = hum.WalkSpeed
+    local oldJump = hum.JumpPower
+
+    hum.WalkSpeed = 0
+    hum.JumpPower = 0
+    hum:Move(Vector3.zero, true)
+
+    for i = 1, 8 do
+        root.CFrame = CFrame.new(pos)
+        RunService.Heartbeat:Wait()
+    end
+
+    task.wait(0.08)
+
+    hum.WalkSpeed = oldWalk
+    hum.JumpPower = oldJump
+end
+
+Tab:CreateToggle({
+    Name = "AUTO KICK AND CLAIM",
+    CurrentValue = false,
+    Flag = "AutoKick",
+
+    Callback = function(value)
+        running = value
+
+        if running then
+            task.spawn(function()
+                while running do
+                    local char = player.Character or player.CharacterAdded:Wait()
+                    local root = char:WaitForChild("HumanoidRootPart")
+                    local hum = char:WaitForChild("Humanoid")
+
+                    forceTP(root, hum, kickTP)
+                    task.wait(0.25)
+
+                    pcall(function()
+                        kickEvent:FireServer(1)
+                    end)
+
+                    forceTP(root, hum, fotoTP)
+                    task.wait(0.40)
+
+                    forceTP(root, hum, claimTP)
+                    task.wait(0.2)
+
+                    hum:MoveTo(movePos)
+                    hum.MoveToFinished:Wait(1)
+
+                    task.wait(0.2)
+                end
+            end)
+        end
+    end,
+})
