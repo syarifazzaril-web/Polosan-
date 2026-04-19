@@ -27,7 +27,7 @@ local Tab = Window:CreateTab("Main", 4483362458)
 local running = false
 
 local kickTP  = Vector3.new(699.768, 3.167, 231.199)
-local fotoTP  = Vector3.new(-2523.8642578125, 50.1667630566406, 293.5030517578125)
+local fotoTP  = Vector3.new(-2643.9912109375, 49.99802017211914, 157.18048095703125)
 local claimTP = Vector3.new(714.386, 3.167, 167.385)
 local movePos = Vector3.new(708.052, 3.167, 188.172)
 
