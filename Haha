@@ -1,0 +1,333 @@
+-- Rilz Hub | Insta TP
+-- Koordinat di-lock sekali saat exe
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local lp = Players.LocalPlayer
+
+-- ============ KOORDINAT ============
+local coords = {
+    {name = "Coord 1", x = -6.761740207672119, y = 3.4973812103271484, z = 18.631542205810547},
+    {name = "Coord 2", x = -6.346717357635498, y = 3.4973821640014165, z = 102.51959228515625},
+}
+
+-- ============ FUNGSI ============
+local function getNearestCoord()
+    local char = lp.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return nil, 0 end
+    local myPos = char.HumanoidRootPart.Position
+    local nearest, minDist = nil, math.huge
+    for _, coord in ipairs(coords) do
+        local dist = (myPos - Vector3.new(coord.x, coord.y, coord.z)).Magnitude
+        if dist < minDist then minDist = dist; nearest = coord end
+    end
+    return nearest, minDist
+end
+
+local function teleportTo(coord)
+    local char = lp.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = CFrame.new(coord.x, coord.y + 3, coord.z)
+    end
+end
+
+-- ============ GUI ============
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "RilzHub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = lp:WaitForChild("PlayerGui")
+
+local minimized = false
+
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.new(0, 320, 0, 250)
+Main.Position = UDim2.new(0.5, -160, 0.5, -125)
+Main.BackgroundColor3 = Color3.fromRGB(10, 10, 18)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Main.ClipsDescendants = true
+Main.Parent = ScreenGui
+
+local MainGrad = Instance.new("UIGradient")
+MainGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 10, 22)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 8, 35)),
+})
+MainGrad.Rotation = 135
+MainGrad.Parent = Main
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 14)
+MainCorner.Parent = Main
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(120, 60, 255)
+MainStroke.Thickness = 1.5
+MainStroke.Transparency = 0.3
+MainStroke.Parent = Main
+
+-- Accent bar
+local AccentBar = Instance.new("Frame")
+AccentBar.Size = UDim2.new(1, 0, 0, 3)
+AccentBar.Position = UDim2.new(0, 0, 0, 0)
+AccentBar.BackgroundColor3 = Color3.fromRGB(130, 60, 255)
+AccentBar.BorderSizePixel = 0
+AccentBar.Parent = Main
+local AccentGrad = Instance.new("UIGradient")
+AccentGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 0, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(200, 100, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 0, 255)),
+})
+AccentGrad.Parent = AccentBar
+local AccentCorner = Instance.new("UICorner")
+AccentCorner.CornerRadius = UDim.new(0, 14)
+AccentCorner.Parent = AccentBar
+
+-- Logo
+local Logo = Instance.new("TextLabel")
+Logo.Size = UDim2.new(0, 180, 0, 30)
+Logo.Position = UDim2.new(0, 16, 0, 12)
+Logo.BackgroundTransparency = 1
+Logo.Text = "⚡ Rilz Hub"
+Logo.TextColor3 = Color3.fromRGB(255, 255, 255)
+Logo.Font = Enum.Font.GothamBold
+Logo.TextSize = 20
+Logo.TextXAlignment = Enum.TextXAlignment.Left
+Logo.Parent = Main
+
+local SubLabel = Instance.new("TextLabel")
+SubLabel.Size = UDim2.new(0, 180, 0, 16)
+SubLabel.Position = UDim2.new(0, 18, 0, 38)
+SubLabel.BackgroundTransparency = 1
+SubLabel.Text = "Insta TP · Auto Lock"
+SubLabel.TextColor3 = Color3.fromRGB(130, 80, 255)
+SubLabel.Font = Enum.Font.Gotham
+SubLabel.TextSize = 11
+SubLabel.TextXAlignment = Enum.TextXAlignment.Left
+SubLabel.Parent = Main
+
+-- Minimize Button
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 30, 0, 30)
+MinBtn.Position = UDim2.new(1, -76, 0, 12)
+MinBtn.BackgroundColor3 = Color3.fromRGB(40, 30, 70)
+MinBtn.Text = "—"
+MinBtn.TextColor3 = Color3.fromRGB(200, 170, 255)
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 14
+MinBtn.BorderSizePixel = 0
+MinBtn.Parent = Main
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 8)
+MinCorner.Parent = MinBtn
+
+-- Close Button
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -40, 0, 12)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 80)
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 13
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Parent = Main
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseBtn
+
+-- Divider
+local Divider = Instance.new("Frame")
+Divider.Size = UDim2.new(1, -32, 0, 1)
+Divider.Position = UDim2.new(0, 16, 0, 62)
+Divider.BackgroundColor3 = Color3.fromRGB(80, 40, 160)
+Divider.BorderSizePixel = 0
+Divider.Parent = Main
+
+-- Content
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, 0, 1, -68)
+Content.Position = UDim2.new(0, 0, 0, 68)
+Content.BackgroundTransparency = 1
+Content.Parent = Main
+
+-- Section label
+local NearLabel = Instance.new("TextLabel")
+NearLabel.Size = UDim2.new(1, -32, 0, 18)
+NearLabel.Position = UDim2.new(0, 16, 0, 6)
+NearLabel.BackgroundTransparency = 1
+NearLabel.Text = "📍 TARGET KOORDINAT"
+NearLabel.TextColor3 = Color3.fromRGB(160, 100, 255)
+NearLabel.Font = Enum.Font.GothamBold
+NearLabel.TextSize = 11
+NearLabel.TextXAlignment = Enum.TextXAlignment.Left
+NearLabel.Parent = Content
+
+-- Koordinat Card
+local CoordCard = Instance.new("Frame")
+CoordCard.Size = UDim2.new(1, -32, 0, 66)
+CoordCard.Position = UDim2.new(0, 16, 0, 28)
+CoordCard.BackgroundColor3 = Color3.fromRGB(20, 14, 38)
+CoordCard.BorderSizePixel = 0
+CoordCard.Parent = Content
+local CardCorner = Instance.new("UICorner")
+CardCorner.CornerRadius = UDim.new(0, 10)
+CardCorner.Parent = CoordCard
+local CardStroke = Instance.new("UIStroke")
+CardStroke.Color = Color3.fromRGB(90, 40, 180)
+CardStroke.Thickness = 1
+CardStroke.Transparency = 0.4
+CardStroke.Parent = CoordCard
+
+local CoordName = Instance.new("TextLabel")
+CoordName.Size = UDim2.new(0, 160, 0, 22)
+CoordName.Position = UDim2.new(0, 12, 0, 6)
+CoordName.BackgroundTransparency = 1
+CoordName.Text = "🔍 Scanning..."
+CoordName.TextColor3 = Color3.fromRGB(220, 200, 255)
+CoordName.Font = Enum.Font.GothamBold
+CoordName.TextSize = 13
+CoordName.TextXAlignment = Enum.TextXAlignment.Left
+CoordName.Parent = CoordCard
+
+local DistLabel = Instance.new("TextLabel")
+DistLabel.Size = UDim2.new(0, 90, 0, 22)
+DistLabel.Position = UDim2.new(1, -100, 0, 6)
+DistLabel.BackgroundTransparency = 1
+DistLabel.Text = "— stud"
+DistLabel.TextColor3 = Color3.fromRGB(100, 200, 140)
+DistLabel.Font = Enum.Font.GothamBold
+DistLabel.TextSize = 11
+DistLabel.TextXAlignment = Enum.TextXAlignment.Right
+DistLabel.Parent = CoordCard
+
+local CoordVal = Instance.new("TextLabel")
+CoordVal.Size = UDim2.new(1, -16, 0, 26)
+CoordVal.Position = UDim2.new(0, 12, 0, 34)
+CoordVal.BackgroundTransparency = 1
+CoordVal.Text = "X: —   Z: —"
+CoordVal.TextColor3 = Color3.fromRGB(120, 100, 170)
+CoordVal.Font = Enum.Font.Code
+CoordVal.TextSize = 10
+CoordVal.TextXAlignment = Enum.TextXAlignment.Left
+CoordVal.Parent = CoordCard
+
+-- GO Button
+local GoBtn = Instance.new("TextButton")
+GoBtn.Size = UDim2.new(1, -32, 0, 46)
+GoBtn.Position = UDim2.new(0, 16, 0, 104)
+GoBtn.BackgroundColor3 = Color3.fromRGB(100, 40, 220)
+GoBtn.Text = "GO!  ⚡  Insta TP"
+GoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+GoBtn.Font = Enum.Font.GothamBold
+GoBtn.TextSize = 16
+GoBtn.BorderSizePixel = 0
+GoBtn.Parent = Content
+local GoBtnCorner = Instance.new("UICorner")
+GoBtnCorner.CornerRadius = UDim.new(0, 10)
+GoBtnCorner.Parent = GoBtn
+local GoBtnGrad = Instance.new("UIGradient")
+GoBtnGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(130, 60, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(70, 20, 190)),
+})
+GoBtnGrad.Rotation = 90
+GoBtnGrad.Parent = GoBtn
+
+-- Lock status dot + label
+local LockDot = Instance.new("Frame")
+LockDot.Size = UDim2.new(0, 8, 0, 8)
+LockDot.Position = UDim2.new(0, 16, 0, 162)
+LockDot.BackgroundColor3 = Color3.fromRGB(255, 180, 40)
+LockDot.BorderSizePixel = 0
+LockDot.Parent = Content
+local LockDotCorner = Instance.new("UICorner")
+LockDotCorner.CornerRadius = UDim.new(1, 0)
+LockDotCorner.Parent = LockDot
+
+local LockText = Instance.new("TextLabel")
+LockText.Size = UDim2.new(1, -36, 0, 14)
+LockText.Position = UDim2.new(0, 30, 0, 157)
+LockText.BackgroundTransparency = 1
+LockText.Text = "Mendeteksi koordinat..."
+LockText.TextColor3 = Color3.fromRGB(180, 140, 60)
+LockText.Font = Enum.Font.Gotham
+LockText.TextSize = 10
+LockText.TextXAlignment = Enum.TextXAlignment.Left
+LockText.TextWrapped = true
+LockText.Parent = Content
+
+-- Footer
+local Footer = Instance.new("TextLabel")
+Footer.Size = UDim2.new(1, 0, 0, 16)
+Footer.Position = UDim2.new(0, 0, 1, -18)
+Footer.BackgroundTransparency = 1
+Footer.Text = "Rilz Hub · by rilz"
+Footer.TextColor3 = Color3.fromRGB(55, 40, 90)
+Footer.Font = Enum.Font.Gotham
+Footer.TextSize = 10
+Footer.Parent = Main
+
+-- ============ LOGIC ============
+
+local lockedCoord = nil
+
+-- Lock koordinat SEKALI saat exe
+task.spawn(function()
+    local char = lp.Character or lp.CharacterAdded:Wait()
+    char:WaitForChild("HumanoidRootPart")
+
+    local dist
+    lockedCoord, dist = getNearestCoord()
+
+    if lockedCoord then
+        CoordName.Text = "🔒 " .. lockedCoord.name
+        CoordVal.Text = string.format("X: %.2f   Z: %.2f", lockedCoord.x, lockedCoord.z)
+        DistLabel.Text = string.format("%.1f stud", dist)
+        LockDot.BackgroundColor3 = Color3.fromRGB(80, 220, 120)
+        LockText.Text = "Terkunci ke " .. lockedCoord.name .. " — tidak akan berubah"
+        LockText.TextColor3 = Color3.fromRGB(90, 170, 120)
+    end
+end)
+
+-- GO Button
+GoBtn.MouseButton1Click:Connect(function()
+    if lockedCoord then
+        teleportTo(lockedCoord)
+        GoBtn.Text = "✓  Teleported!"
+        GoBtn.BackgroundColor3 = Color3.fromRGB(40, 180, 90)
+        task.wait(0.8)
+        GoBtn.Text = "GO!  ⚡  Insta TP"
+        GoBtn.BackgroundColor3 = Color3.fromRGB(100, 40, 220)
+    end
+end)
+
+GoBtn.MouseEnter:Connect(function()
+    TweenService:Create(GoBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(150, 80, 255)}):Play()
+end)
+GoBtn.MouseLeave:Connect(function()
+    TweenService:Create(GoBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(100, 40, 220)}):Play()
+end)
+
+-- Minimize
+MinBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        TweenService:Create(Main, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {Size = UDim2.new(0, 320, 0, 58)}):Play()
+        MinBtn.Text = "□"
+    else
+        TweenService:Create(Main, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {Size = UDim2.new(0, 320, 0, 250)}):Play()
+        MinBtn.Text = "—"
+    end
+end)
+
+-- Close
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+print("✅ Rilz Hub loaded!")
