@@ -64,6 +64,42 @@ local lastBatSwing  = 0
 local BAT_SWING_COOLDOWN = 0.12
 
 -- ============================================================
+-- CONFIG SAVE / LOAD  (didefinisikan awal supaya bisa dipanggil
+-- dari toggle/slider yang dibuat belakangan)
+-- ============================================================
+local CONFIG_FILE = "RilzzDuels_Config.json"
+
+local function saveConfig()
+    local config = {Enabled = {}, Values = {}}
+    for k, v in pairs(Enabled) do config.Enabled[k] = v end
+    for k, v in pairs(Values) do
+        if type(v) == "number" then config.Values[k] = v end
+    end
+    pcall(function()
+        writefile(CONFIG_FILE, HttpService:JSONEncode(config))
+    end)
+end
+
+local function loadConfig()
+    if not (isfile and isfile(CONFIG_FILE)) then return false end
+    local ok, data = pcall(function()
+        return HttpService:JSONDecode(readfile(CONFIG_FILE))
+    end)
+    if not ok or not data then return false end
+    if data.Enabled then
+        for k, v in pairs(data.Enabled) do
+            if Enabled[k] ~= nil then Enabled[k] = v end
+        end
+    end
+    if data.Values then
+        for k, v in pairs(data.Values) do
+            if Values[k] ~= nil then Values[k] = v end
+        end
+    end
+    return true
+end
+
+-- ============================================================
 -- HELPERS
 -- ============================================================
 local function getMovementDirection()
@@ -1008,6 +1044,7 @@ end
 -- TOGGLE & SLIDER BUILDERS
 -- ============================================================
 local VisualSetters = {}
+local SliderVisualUpdaters = {} -- untuk refresh visual slider saat load config
 
 local function CreateToggle(parent, labelText, enabledKey, callback, order)
     local row = Create("Frame", {
@@ -1075,6 +1112,7 @@ local function CreateToggle(parent, labelText, enabledKey, callback, order)
         isOn = not isOn
         Enabled[enabledKey] = isOn
         setVisual(isOn)
+        pcall(saveConfig) -- auto-save setiap toggle berubah
     end)
 
     return row
@@ -1147,7 +1185,10 @@ local function CreateSlider(parent, labelText, minVal, maxVal, valueKey, callbac
     sliderBtn.MouseButton1Down:Connect(function() draggingSlider = true end)
     UserInputService.InputEnded:Connect(function(inp)
         if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-            draggingSlider = false
+            if draggingSlider then
+                draggingSlider = false
+                pcall(saveConfig) -- auto-save saat selesai geser slider
+            end
         end
     end)
     UserInputService.InputChanged:Connect(function(inp)
@@ -1161,6 +1202,16 @@ local function CreateSlider(parent, labelText, minVal, maxVal, valueKey, callbac
             callback(val)
         end
     end)
+
+    -- Simpan fungsi untuk refresh visual slider saat load config
+    SliderVisualUpdaters[valueKey] = function()
+        local v = Values[valueKey]
+        local p = math.clamp((v - minVal) / (maxVal - minVal), 0, 1)
+        fill.Size = UDim2.new(p, 0, 1, 0)
+        knob.Position = UDim2.new(p, -6, 0.5, -6)
+        labelFrame.Text = labelText .. ": " .. tostring(v)
+        callback(v)
+    end
 
     return container
 end
@@ -1349,6 +1400,56 @@ CreateToggle(ScrollFrame, "Optimizer + XRay", "OptimizerXRay", function(s)
     if s then enableOptimizer() enableXRay() else disableOptimizer() disableXRay() end
 end, order) order += 1
 
+
+
+-- Status label
+local statusLabel = Create("TextLabel", {
+    BackgroundTransparency = 1,
+    Size = UDim2.new(1, -16, 0, 20),
+    Font = Enum.Font.Gotham,
+    Text = "",
+    TextColor3 = Color3.fromRGB(180, 255, 180),
+    TextSize = 10,
+    TextXAlignment = Enum.TextXAlignment.Center,
+    LayoutOrder = order,
+    Parent = ScrollFrame
+})
+order += 1
+
+local function showStatus(msg, color)
+    statusLabel.Text = msg
+    statusLabel.TextColor3 = color or Color3.fromRGB(180, 255, 180)
+    task.delay(2.5, function()
+        statusLabel.Text = ""
+    end)
+end
+
+-- Auto-load config saat script dijalankan
+task.spawn(function()
+    task.wait(0.5)
+    if isfile and isfile(CONFIG_FILE) then
+        if loadConfig() then
+            for k, v in pairs(Enabled) do
+                if VisualSetters[k] then VisualSetters[k](v, true) end
+            end
+            -- Refresh visual slider sesuai nilai yang di-load
+            for k, _ in pairs(Values) do
+                if SliderVisualUpdaters[k] then SliderVisualUpdaters[k]() end
+            end
+            if Enabled.SpeedBoost then startSpeedBoost() end
+            if Enabled.AntiRagdoll then startAntiRagdoll() end
+            if Enabled.HitCircle then startHitCircle() end
+            if Enabled.SpeedWhileStealing then startSpeedWhileStealing() end
+            if Enabled.OptimizerXRay then enableOptimizer() enableXRay() end
+            if Enabled.SpamBat then startSpamBat() end
+            if Enabled.Helicopter then startHelicopter() end
+            if Enabled.GalaxyMode then startGalaxyMode() end
+            if Enabled.BatAimbot then startBatAimbot() end
+            showStatus("✅ Auto-load config!", Color3.fromRGB(100, 255, 100))
+        end
+    end
+end)
+
 -- ============================================================
 -- FLOATING BUTTONS (outside main UI, draggable, right side)
 -- ============================================================
@@ -1498,6 +1599,7 @@ floatBtnUpdateAimbot = CreateFloatingButton(
         Enabled.BatAimbot = state
         if VisualSetters.BatAimbot then VisualSetters.BatAimbot(state, true) end
         if state then startBatAimbot() else stopBatAimbot() end
+        pcall(saveConfig)
     end
 )
 
@@ -1520,12 +1622,14 @@ UserInputService.InputBegan:Connect(function(input, gpe)
         Enabled.SpeedBoost = not Enabled.SpeedBoost
         if VisualSetters.SpeedBoost then VisualSetters.SpeedBoost(Enabled.SpeedBoost) end
         if Enabled.SpeedBoost then startSpeedBoost() else stopSpeedBoost() end
+        pcall(saveConfig)
 
     elseif input.KeyCode == KEYBINDS.BATAIMBOT then
         Enabled.BatAimbot = not Enabled.BatAimbot
         if VisualSetters.BatAimbot then VisualSetters.BatAimbot(Enabled.BatAimbot) end
         if floatBtnUpdateAimbot then floatBtnUpdateAimbot(Enabled.BatAimbot) end
         if Enabled.BatAimbot then startBatAimbot() else stopBatAimbot() end
+        pcall(saveConfig)
 
     end
 end)
