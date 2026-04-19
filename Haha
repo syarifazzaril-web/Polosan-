@@ -1,7 +1,7 @@
 -- Rilz Hub | Insta TP
 -- Koordinat di-lock sekali saat exe
 
-local Players = game:GetService("Players")
+local Players = game:GetService("Pllayers")
 local TweenService = game:GetService("TweenService")
 local lp = Players.LocalPlayer
 
