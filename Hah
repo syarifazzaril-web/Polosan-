@@ -1,89 +1,104 @@
-repeat task.wait() until game:IsLoaded()
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local player = Players.LocalPlayer
-
-local network = game:GetService("ReplicatedStorage")
-    :WaitForChild("Shared")
-    :WaitForChild("Packages")
-    :WaitForChild("Network")
-
-local kickEvent = network:WaitForChild("rev_KickEvent")
-
-local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+-- Rilzz Hub - SC Kick Script
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
     Name = "Rilzz Hub",
     LoadingTitle = "Rilzz Hub",
     LoadingSubtitle = "by Rilzz",
-    Theme = "Default",
-    DisableRayfieldPrompts = false,
-    DisableBuildWarnings = false,
+    ConfigurationSaving = { Enabled = false },
+    Discord = { Enabled = false },
+    KeySystem = false,
 })
 
 local Tab = Window:CreateTab("Main", 4483362458)
 
-local running = false
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local rootPart = character:WaitForChild("HumanoidRootPart")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
-local kickTP  = Vector3.new(699.768, 3.167, 231.199)
-local fotoTP  = Vector3.new(-2643.9912109375, 49.99802017211914, 157.18048095703125)
-local claimTP = Vector3.new(714.386, 3.167, 167.385)
-local movePos = Vector3.new(708.052, 3.167, 188.172)
+local finalPosition = Vector3.new(708.052, 3.167, 188.172)
+local detecting = false
+local moveConnection
+local toolConnection
+local isRunning = false
+local isEnabled = false
 
-local function forceTP(root, hum, pos)
-    local oldWalk = hum.WalkSpeed
-    local oldJump = hum.JumpPower
+local function stopAll()
+    detecting = false
+    isRunning = false
+    if moveConnection then moveConnection:Disconnect() moveConnection = nil end
+    if toolConnection then toolConnection:Disconnect() toolConnection = nil end
+end
 
-    hum.WalkSpeed = 0
-    hum.JumpPower = 0
-    hum:Move(Vector3.zero, true)
+local function runSequence()
+    if isRunning then return end
+    if not isEnabled then return end
+    isRunning = true
+    detecting = false
 
-    for i = 1, 8 do
-        root.CFrame = CFrame.new(pos)
-        RunService.Heartbeat:Wait()
-    end
+    if moveConnection then moveConnection:Disconnect() moveConnection = nil end
+    if toolConnection then toolConnection:Disconnect() toolConnection = nil end
 
-    task.wait(0.08)
+    rootPart.CFrame = CFrame.new(Vector3.new(699.768, 3.167, 231.199))
+    task.wait(0.35)
 
-    hum.WalkSpeed = oldWalk
-    hum.JumpPower = oldJump
+    local args = { [1] = 1 }
+    game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Packages"):WaitForChild("Network"):WaitForChild("rev_KickEvent"):FireServer(unpack(args))
+    rootPart.CFrame = CFrame.new(Vector3.new(-2643.9912109375, 49.99802017211914, 157.18048095703125))
+
+    task.wait(14)
+
+    if not isEnabled then isRunning = false return end
+
+    rootPart.CFrame = CFrame.new(Vector3.new(714.386, 3.167, 167.385))
+    task.wait(0.1)
+
+    local tween = TweenService:Create(rootPart, TweenInfo.new(1, Enum.EasingStyle.Linear), {CFrame = CFrame.new(finalPosition)})
+    tween:Play()
+    tween.Completed:Wait()
+
+    if not isEnabled then isRunning = false return end
+
+    detecting = true
+    isRunning = false
+
+    local lastPosition = rootPart.Position
+
+    moveConnection = RunService.Heartbeat:Connect(function()
+        if not detecting then return end
+        local dist = (rootPart.Position - lastPosition).Magnitude
+        if dist > 0.01 then
+            rootPart.CFrame = CFrame.new(finalPosition)
+        end
+        lastPosition = rootPart.Position
+    end)
+
+    toolConnection = character.ChildAdded:Connect(function(child)
+        if not detecting then return end
+        if not isEnabled then return end
+        if child:IsA("Tool") then
+            detecting = false
+            if moveConnection then moveConnection:Disconnect() moveConnection = nil end
+            toolConnection:Disconnect() toolConnection = nil
+            task.spawn(runSequence)
+        end
+    end)
 end
 
 Tab:CreateToggle({
-    Name = "AUTO KICK AND CLAIM",
+    Name = "Auto Perfect And Claim",
     CurrentValue = false,
-    Flag = "AutoKick",
-
+    Flag = "AutoPerfectClaim",
     Callback = function(value)
-        running = value
-
-        if running then
-            task.spawn(function()
-                while running do
-                    local char = player.Character or player.CharacterAdded:Wait()
-                    local root = char:WaitForChild("HumanoidRootPart")
-                    local hum = char:WaitForChild("Humanoid")
-
-                    forceTP(root, hum, kickTP)
-                    task.wait(0.25)
-
-                    pcall(function()
-                        kickEvent:FireServer(1)
-                    end)
-
-                    forceTP(root, hum, fotoTP)
-                    task.wait(0.40)
-
-                    forceTP(root, hum, claimTP)
-                    task.wait(0.2)
-
-                    hum:MoveTo(movePos)
-                    hum.MoveToFinished:Wait(1)
-
-                    task.wait(0.2)
-                end
-            end)
+        isEnabled = value
+        if isEnabled then
+            task.spawn(runSequence)
+        else
+            stopAll()
         end
     end,
 })
+
+Rayfield:LoadConfiguration()
