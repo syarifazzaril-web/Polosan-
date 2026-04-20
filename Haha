@@ -1,7 +1,7 @@
 -- Rilz Hub | Insta TP
 -- Koordinat di-lock sekali saat exe
 
-local Players = game:GetService("Pllayers")
+local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local lp = Players.LocalPlayer
 
@@ -92,7 +92,7 @@ local Logo = Instance.new("TextLabel")
 Logo.Size = UDim2.new(0, 180, 0, 30)
 Logo.Position = UDim2.new(0, 16, 0, 12)
 Logo.BackgroundTransparency = 1
-Logo.Text = "⚡ Rilz Hub"
+Logo.Text = "☠️ ILyass Hub"
 Logo.TextColor3 = Color3.fromRGB(255, 255, 255)
 Logo.Font = Enum.Font.GothamBold
 Logo.TextSize = 20
@@ -330,4 +330,4 @@ CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
-print("✅ Rilz Hub loaded!")
+print("✅ ilyas Hub loaded!")
