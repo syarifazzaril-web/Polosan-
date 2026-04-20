@@ -1,0 +1,100 @@
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local lp = Players.LocalPlayer
+local sellRemote = RS:WaitForChild("Shared"):WaitForChild("Packages"):WaitForChild("Network"):WaitForChild("ref_B_Sell")
+
+local OG = {["Karkerkar Kurkur"]=1,["Blackhole Goat"]=1,["Cappuccino Clownino"]=1,["Compactoroni Diskaloni"]=1,["Nuclearo Dinossauro"]=1,["Chillin Chilli"]=1,["Crazylone Pizzaione"]=1,["Meowl"]=1,["Strawberry Elephant"]=1}
+
+local running = false
+local sold = 0
+
+local function getHum() return lp.Character and lp.Character:FindFirstChildOfClass("Humanoid") end
+
+local sg = Instance.new("ScreenGui",lp:WaitForChild("PlayerGui"))
+sg.Name="AutoSellHub" sg.ResetOnSpawn=false
+local M = Instance.new("Frame",sg)
+M.Size=UDim2.new(0,260,0,140) M.Position=UDim2.new(0.5,-130,0,120)
+M.BackgroundColor3=Color3.fromRGB(10,10,18) M.Active=true M.Draggable=true M.BorderSizePixel=0
+Instance.new("UICorner",M).CornerRadius=UDim.new(0,12)
+local sk=Instance.new("UIStroke",M) sk.Color=Color3.fromRGB(255,100,60) sk.Thickness=1.5 sk.Transparency=0.3
+
+local ab=Instance.new("Frame",M) ab.Size=UDim2.new(1,0,0,3) ab.BorderSizePixel=0 ab.BackgroundColor3=Color3.fromRGB(255,80,40)
+Instance.new("UICorner",ab).CornerRadius=UDim.new(0,12)
+local ag=Instance.new("UIGradient",ab)
+ag.Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.fromRGB(255,50,30)),ColorSequenceKeypoint.new(0.5,Color3.fromRGB(255,180,60)),ColorSequenceKeypoint.new(1,Color3.fromRGB(255,50,30))})
+
+local function mk(y,txt,sz,col,bold)
+    local l=Instance.new("TextLabel",M) l.Size=UDim2.new(1,-28,0,18) l.Position=UDim2.new(0,14,0,y)
+    l.BackgroundTransparency=1 l.Text=txt l.TextColor3=col l.TextSize=sz l.TextXAlignment=Enum.TextXAlignment.Left
+    l.Font=bold and Enum.Font.GothamBold or Enum.Font.Gotham return l
+end
+
+mk(10,"🪙  Auto Sell Non-OG",15,Color3.fromRGB(255,255,255),true)
+local sLbl=mk(34,"Idle",11,Color3.fromRGB(160,160,160),false)
+local qLbl=mk(52,"Antrian: 0  |  Sold: 0",11,Color3.fromRGB(255,160,60),true)
+local ogLbl=mk(69,"OG (skip): 0",10,Color3.fromRGB(80,200,120),false)
+
+local Btn=Instance.new("TextButton",M)
+Btn.Size=UDim2.new(1,-28,0,30) Btn.Position=UDim2.new(0,14,0,90)
+Btn.BackgroundColor3=Color3.fromRGB(30,20,55) Btn.Text="▶  START SELL"
+Btn.TextColor3=Color3.fromRGB(255,130,60) Btn.Font=Enum.Font.GothamBold Btn.TextSize=13 Btn.BorderSizePixel=0
+Instance.new("UICorner",Btn).CornerRadius=UDim.new(0,8)
+local bs=Instance.new("UIStroke",Btn) bs.Color=Color3.fromRGB(255,100,60) bs.Thickness=1 bs.Transparency=0.4
+
+local X=Instance.new("TextButton",M)
+X.Size=UDim2.new(0,24,0,24) X.Position=UDim2.new(1,-30,0,10)
+X.BackgroundColor3=Color3.fromRGB(200,50,80) X.Text="✕" X.TextColor3=Color3.fromRGB(255,255,255)
+X.Font=Enum.Font.GothamBold X.TextSize=11 X.BorderSizePixel=0
+Instance.new("UICorner",X).CornerRadius=UDim.new(0,6)
+
+Btn.MouseButton1Click:Connect(function()
+    running = not running
+    if not running then
+        Btn.Text="▶  START SELL" Btn.BackgroundColor3=Color3.fromRGB(30,20,55)
+        sLbl.Text="Dihentikan — Sold: "..sold sLbl.TextColor3=Color3.fromRGB(160,160,160)
+        local h=getHum() if h then h:UnequipTools() end
+        return
+    end
+    Btn.Text="⏹  STOP" Btn.BackgroundColor3=Color3.fromRGB(20,60,25)
+    sold=0
+
+    task.spawn(function()
+        while running do
+            local ogc,sellable=0,{}
+            for _,t in ipairs(lp.Backpack:GetChildren()) do
+                if t:IsA("Tool") and t:GetAttribute("GUID") then
+                    if OG[t.Name] then ogc+=1 else table.insert(sellable,t) end
+                end
+            end
+            ogLbl.Text="OG (skip): "..ogc
+
+            if #sellable==0 then
+                sLbl.Text="✅ Selesai!" sLbl.TextColor3=Color3.fromRGB(80,220,120)
+                qLbl.Text="Antrian: 0  |  Sold: "..sold
+                running=false break
+            end
+
+            for _,tool in ipairs(sellable) do
+                if not running or not tool or not tool.Parent then continue end
+                -- Equip + sell tanpa unequip dulu, langsung invoke
+                local h=getHum()
+                if h then h:EquipTool(tool) end
+                task.wait() -- 1 frame saja
+                pcall(function() sellRemote:InvokeServer() end)
+                sold+=1
+                sLbl.Text="🪙 "..tool.Name sLbl.TextColor3=Color3.fromRGB(255,160,60)
+                qLbl.Text="Sold: "..sold
+                -- unequip + langsung lanjut tanpa wait
+                local h2=getHum() if h2 then h2:UnequipTools() end
+            end
+        end
+        Btn.Text="▶  START SELL" Btn.BackgroundColor3=Color3.fromRGB(30,20,55)
+        sLbl.Text="Selesai — Sold: "..sold sLbl.TextColor3=Color3.fromRGB(80,220,120)
+    end)
+end)
+
+X.MouseButton1Click:Connect(function()
+    running=false
+    local h=getHum() if h then h:UnequipTools() end
+    sg:Destroy()
+end)
