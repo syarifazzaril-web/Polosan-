@@ -1,0 +1,401 @@
+-- Ikhsan Hub | Brainrot Scanner + Auto Steal + Auto Event (FIXED)
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local lp = Players.LocalPlayer
+
+-- TP kembali ke koordinat ini setelah steal
+local HOME_POS = Vector3.new(62.58124923706055, 53.87302017211914, 7.525909900665283)
+
+local function teleportTo(pos)
+    local char = lp.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = CFrame.new(pos + Vector3.new(0, 5, 0))
+    end
+end
+
+local function fireSteal(prompt)
+    pcall(function() fireproximityprompt(prompt) end)
+end
+
+local function scanByRarity(rarity)
+    local found = {}
+    local ef = workspace:FindFirstChild("EntitiesFolder")
+    if not ef then return found end
+    for _, v in ipairs(ef:GetDescendants()) do
+        if v.Name == "RarityLabel" and v:IsA("TextLabel") and string.lower(v.Text) == string.lower(rarity) then
+            local mesh = v.Parent and v.Parent.Parent
+            if mesh and mesh:IsA("BasePart") then
+                local prompt = mesh:FindFirstChild("ProximityPrompt")
+                if prompt then
+                    table.insert(found, {name = mesh.Parent and mesh.Parent.Name or mesh.Name, pos = mesh.Position, prompt = prompt})
+                end
+            end
+        end
+    end
+    return found
+end
+
+-- FIXED: Scan mutation di EntitiesFolder bukan Plots
+local function scanByMutation(mutation)
+    local found = {}
+    local ef = workspace:FindFirstChild("EntitiesFolder")
+    if not ef then
+        -- fallback ke Plots kalau EntitiesFolder tidak ada
+        local plots = workspace:FindFirstChild("Plots")
+        if not plots then return found end
+        for _, v in ipairs(plots:GetDescendants()) do
+            if v.Name == "MutationLabel" and v:IsA("TextLabel") and string.lower(v.Text) == string.lower(mutation) then
+                local mesh = v.Parent and v.Parent.Parent
+                if mesh and mesh:IsA("BasePart") then
+                    local prompt = mesh:FindFirstChild("ProximityPrompt")
+                    if prompt then
+                        table.insert(found, {name = mesh.Parent and mesh.Parent.Name or mesh.Name, pos = mesh.Position, prompt = prompt})
+                    end
+                end
+            end
+        end
+        return found
+    end
+    for _, v in ipairs(ef:GetDescendants()) do
+        if v.Name == "MutationLabel" and v:IsA("TextLabel") and string.lower(v.Text) == string.lower(mutation) then
+            local mesh = v.Parent and v.Parent.Parent
+            if mesh and mesh:IsA("BasePart") then
+                local prompt = mesh:FindFirstChild("ProximityPrompt")
+                if prompt then
+                    table.insert(found, {name = mesh.Parent and mesh.Parent.Name or mesh.Name, pos = mesh.Position, prompt = prompt})
+                end
+            end
+        end
+    end
+    return found
+end
+
+-- ============ GUI ============
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "IkhsanHub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = lp:WaitForChild("PlayerGui")
+
+local minimized = false
+local loops = {}
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 320, 0, 480)
+Main.Position = UDim2.new(0.5, -160, 0.5, -240)
+Main.BackgroundColor3 = Color3.fromRGB(10, 10, 18)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Main.ClipsDescendants = true
+Main.Parent = ScreenGui
+
+local MG = Instance.new("UIGradient", Main)
+MG.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 10, 22)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 8, 35)),
+})
+MG.Rotation = 135
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 14)
+local MS = Instance.new("UIStroke", Main)
+MS.Color = Color3.fromRGB(120, 60, 255)
+MS.Thickness = 1.5
+MS.Transparency = 0.3
+
+local AccentBar = Instance.new("Frame")
+AccentBar.Size = UDim2.new(1, 0, 0, 3)
+AccentBar.BackgroundColor3 = Color3.fromRGB(130, 60, 255)
+AccentBar.BorderSizePixel = 0
+AccentBar.Parent = Main
+local AG = Instance.new("UIGradient", AccentBar)
+AG.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 0, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(200, 100, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 0, 255)),
+})
+Instance.new("UICorner", AccentBar).CornerRadius = UDim.new(0, 14)
+
+local Logo = Instance.new("TextLabel")
+Logo.Size = UDim2.new(0, 180, 0, 30)
+Logo.Position = UDim2.new(0, 16, 0, 12)
+Logo.BackgroundTransparency = 1
+Logo.Text = "⚡ Ikhsan Hub"
+Logo.TextColor3 = Color3.fromRGB(255, 255, 255)
+Logo.Font = Enum.Font.GothamBold
+Logo.TextSize = 20
+Logo.TextXAlignment = Enum.TextXAlignment.Left
+Logo.Parent = Main
+
+local SubLabel = Instance.new("TextLabel")
+SubLabel.Size = UDim2.new(0, 220, 0, 16)
+SubLabel.Position = UDim2.new(0, 18, 0, 38)
+SubLabel.BackgroundTransparency = 1
+SubLabel.Text = "Brainrot Scanner · Auto Steal"
+SubLabel.TextColor3 = Color3.fromRGB(130, 80, 255)
+SubLabel.Font = Enum.Font.Gotham
+SubLabel.TextSize = 11
+SubLabel.TextXAlignment = Enum.TextXAlignment.Left
+SubLabel.Parent = Main
+
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 30, 0, 30)
+MinBtn.Position = UDim2.new(1, -76, 0, 12)
+MinBtn.BackgroundColor3 = Color3.fromRGB(40, 30, 70)
+MinBtn.Text = "—"
+MinBtn.TextColor3 = Color3.fromRGB(200, 170, 255)
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 14
+MinBtn.BorderSizePixel = 0
+MinBtn.Parent = Main
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 8)
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -40, 0, 12)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 80)
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 13
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Parent = Main
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 8)
+
+local Divider = Instance.new("Frame")
+Divider.Size = UDim2.new(1, -32, 0, 1)
+Divider.Position = UDim2.new(0, 16, 0, 62)
+Divider.BackgroundColor3 = Color3.fromRGB(80, 40, 160)
+Divider.BorderSizePixel = 0
+Divider.Parent = Main
+
+local ScrollFrame = Instance.new("ScrollingFrame")
+ScrollFrame.Size = UDim2.new(1, 0, 1, -68)
+ScrollFrame.Position = UDim2.new(0, 0, 0, 68)
+ScrollFrame.BackgroundTransparency = 1
+ScrollFrame.BorderSizePixel = 0
+ScrollFrame.ScrollBarThickness = 4
+ScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 50, 200)
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollFrame.Parent = Main
+
+local UIList = Instance.new("UIListLayout", ScrollFrame)
+UIList.Padding = UDim.new(0, 8)
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
+UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local UIPad = Instance.new("UIPadding", ScrollFrame)
+UIPad.PaddingTop = UDim.new(0, 8)
+UIPad.PaddingBottom = UDim.new(0, 8)
+
+UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 16)
+end)
+
+local function makeSection(label, order)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, -32, 0, 18)
+    f.BackgroundTransparency = 1
+    f.LayoutOrder = order
+    f.Parent = ScrollFrame
+    local t = Instance.new("TextLabel", f)
+    t.Size = UDim2.new(1, 0, 1, 0)
+    t.BackgroundTransparency = 1
+    t.Text = label
+    t.TextColor3 = Color3.fromRGB(120, 80, 200)
+    t.Font = Enum.Font.GothamBold
+    t.TextSize = 10
+    t.TextXAlignment = Enum.TextXAlignment.Left
+end
+
+local function makeCard(cfg, scanFn, order)
+    local Card = Instance.new("Frame")
+    Card.Size = UDim2.new(1, -32, 0, 92)
+    Card.BackgroundColor3 = Color3.fromRGB(18, 12, 32)
+    Card.BorderSizePixel = 0
+    Card.LayoutOrder = order
+    Card.Parent = ScrollFrame
+    Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 10)
+    local CS = Instance.new("UIStroke", Card)
+    CS.Color = cfg.stroke
+    CS.Thickness = 1
+    CS.Transparency = 0.5
+
+    local CardTitle = Instance.new("TextLabel")
+    CardTitle.Size = UDim2.new(0, 180, 0, 22)
+    CardTitle.Position = UDim2.new(0, 12, 0, 7)
+    CardTitle.BackgroundTransparency = 1
+    CardTitle.Text = cfg.icon .. "  " .. cfg.name
+    CardTitle.TextColor3 = cfg.color1
+    CardTitle.Font = Enum.Font.GothamBold
+    CardTitle.TextSize = 14
+    CardTitle.TextXAlignment = Enum.TextXAlignment.Left
+    CardTitle.Parent = Card
+
+    local CountLabel = Instance.new("TextLabel")
+    CountLabel.Size = UDim2.new(0, 80, 0, 20)
+    CountLabel.Position = UDim2.new(1, -90, 0, 8)
+    CountLabel.BackgroundTransparency = 1
+    CountLabel.Text = "0 found"
+    CountLabel.TextColor3 = Color3.fromRGB(160, 160, 160)
+    CountLabel.Font = Enum.Font.Gotham
+    CountLabel.TextSize = 10
+    CountLabel.TextXAlignment = Enum.TextXAlignment.Right
+    CountLabel.Parent = Card
+
+    local MiniStatus = Instance.new("TextLabel")
+    MiniStatus.Size = UDim2.new(1, -16, 0, 16)
+    MiniStatus.Position = UDim2.new(0, 12, 0, 32)
+    MiniStatus.BackgroundTransparency = 1
+    MiniStatus.Text = "Tidak ada brainrot " .. cfg.label .. " di map"
+    MiniStatus.TextColor3 = Color3.fromRGB(180, 80, 80)
+    MiniStatus.Font = Enum.Font.Gotham
+    MiniStatus.TextSize = 10
+    MiniStatus.TextXAlignment = Enum.TextXAlignment.Left
+    MiniStatus.Parent = Card
+
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1, -16, 0, 26)
+    Btn.Position = UDim2.new(0, 8, 0, 58)
+    Btn.BackgroundColor3 = Color3.fromRGB(30, 20, 55)
+    Btn.Text = "▶  START"
+    Btn.TextColor3 = cfg.color1
+    Btn.Font = Enum.Font.GothamBold
+    Btn.TextSize = 12
+    Btn.BorderSizePixel = 0
+    Btn.Parent = Card
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 8)
+    local BS = Instance.new("UIStroke", Btn)
+    BS.Color = cfg.stroke
+    BS.Thickness = 1
+    BS.Transparency = 0.4
+
+    local key = cfg.name
+    loops[key] = false
+
+    Btn.MouseButton1Click:Connect(function()
+        loops[key] = not loops[key]
+
+        if loops[key] then
+            Btn.Text = "⏹  STOP"
+            Btn.BackgroundColor3 = Color3.fromRGB(20, 60, 25)
+            MiniStatus.Text = "🔍 Mencari " .. cfg.label .. "..."
+            MiniStatus.TextColor3 = Color3.fromRGB(160, 160, 160)
+
+            task.spawn(function()
+                while loops[key] do
+                    local results = scanFn()
+                    CountLabel.Text = #results .. " found"
+
+                    if #results > 0 then
+                        local char = lp.Character
+                        local nearest = results[1]
+                        if char and char:FindFirstChild("HumanoidRootPart") then
+                            local myPos = char.HumanoidRootPart.Position
+                            local minDist = math.huge
+                            for _, r in ipairs(results) do
+                                local d = (myPos - r.pos).Magnitude
+                                if d < minDist then minDist = d; nearest = r end
+                            end
+                        end
+
+                        MiniStatus.Text = "⚡ TP ke " .. nearest.name
+                        MiniStatus.TextColor3 = cfg.color1
+                        teleportTo(nearest.pos)
+                        task.wait(0.4)
+
+                        if nearest.prompt and nearest.prompt.Parent then
+                            fireSteal(nearest.prompt)
+                            MiniStatus.Text = "✅ Steal: " .. nearest.name
+                            MiniStatus.TextColor3 = Color3.fromRGB(80, 220, 120)
+                        end
+
+                        -- FIXED: TP balik ke HOME setelah steal
+                        task.wait(0.5)
+                        teleportTo(HOME_POS)
+                        MiniStatus.Text = "🏠 Kembali ke home..."
+                        MiniStatus.TextColor3 = Color3.fromRGB(160, 200, 255)
+                        task.wait(0.8)
+                    else
+                        CountLabel.Text = "0 found"
+                        MiniStatus.Text = "Tidak ada brainrot " .. cfg.label .. " di map"
+                        MiniStatus.TextColor3 = Color3.fromRGB(180, 80, 80)
+                        task.wait(1)
+                    end
+                end
+
+                MiniStatus.Text = "Tidak ada brainrot " .. cfg.label .. " di map"
+                MiniStatus.TextColor3 = Color3.fromRGB(180, 80, 80)
+                CountLabel.Text = "0 found"
+            end)
+        else
+            Btn.Text = "▶  START"
+            Btn.BackgroundColor3 = Color3.fromRGB(30, 20, 55)
+            MiniStatus.Text = "Tidak ada brainrot " .. cfg.label .. " di map"
+            MiniStatus.TextColor3 = Color3.fromRGB(180, 80, 80)
+            CountLabel.Text = "0 found"
+        end
+    end)
+end
+
+makeSection("━━  AUTO RARITY", 1)
+
+local rarityList = {
+    {name = "Auto God",       label = "God",       icon = "👑", color1 = Color3.fromRGB(255, 200, 0),   stroke = Color3.fromRGB(255, 210, 50),  scanFn = nil},
+    {name = "Auto Divine",    label = "Divine",    icon = "✨", color1 = Color3.fromRGB(100, 180, 255),  stroke = Color3.fromRGB(80, 160, 255),  scanFn = nil},
+    {name = "Auto Exclusive", label = "Exclusive", icon = "💎", color1 = Color3.fromRGB(255, 80, 180),   stroke = Color3.fromRGB(255, 60, 160),  scanFn = nil},
+}
+
+for i, cfg in ipairs(rarityList) do
+    local lbl = cfg.label
+    cfg.scanFn = function() return scanByRarity(lbl) end
+    makeCard(cfg, cfg.scanFn, i + 1)
+end
+
+makeSection("━━  AUTO EVENT (MUTASI)", 6)
+
+local eventCfg = {
+    name = "Auto Event",
+    label = "Spades / Hearts",
+    icon = "♠️♥️",
+    color1 = Color3.fromRGB(200, 120, 255),
+    stroke = Color3.fromRGB(180, 80, 255),
+    scanFn = function()
+        local r = scanByMutation("Spades")
+        for _, v in ipairs(scanByMutation("Hearts")) do
+            table.insert(r, v)
+        end
+        return r
+    end
+}
+makeCard(eventCfg, eventCfg.scanFn, 7)
+
+local FooterFrame = Instance.new("Frame")
+FooterFrame.Size = UDim2.new(1, -32, 0, 20)
+FooterFrame.BackgroundTransparency = 1
+FooterFrame.LayoutOrder = 10
+FooterFrame.Parent = ScrollFrame
+local Footer = Instance.new("TextLabel", FooterFrame)
+Footer.Size = UDim2.new(1, 0, 1, 0)
+Footer.BackgroundTransparency = 1
+Footer.Text = "Ikhsan Hub · by ikhsan"
+Footer.TextColor3 = Color3.fromRGB(55, 40, 90)
+Footer.Font = Enum.Font.Gotham
+Footer.TextSize = 10
+
+MinBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        TweenService:Create(Main, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {Size = UDim2.new(0, 320, 0, 58)}):Play()
+        MinBtn.Text = "□"
+    else
+        TweenService:Create(Main, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {Size = UDim2.new(0, 320, 0, 480)}):Play()
+        MinBtn.Text = "—"
+    end
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    for k in pairs(loops) do loops[k] = false end
+    ScreenGui:Destroy()
+end)
+
+print("✅ Ikhsan Hub loaded!")
