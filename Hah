@@ -48,7 +48,7 @@ local function runSequence()
     game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Packages"):WaitForChild("Network"):WaitForChild("rev_KickEvent"):FireServer(unpack(args))
     rootPart.CFrame = CFrame.new(Vector3.new(-2643.9912109375, 49.99802017211914, 157.18048095703125))
 
-    task.wait(14)
+    task.wait(16)
 
     if not isEnabled then isRunning = false return end
 
