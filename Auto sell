@@ -3,7 +3,7 @@ local RS = game:GetService("ReplicatedStorage")
 local lp = Players.LocalPlayer
 local sellRemote = RS:WaitForChild("Shared"):WaitForChild("Packages"):WaitForChild("Network"):WaitForChild("ref_B_Sell")
 
-local OG = {["Karkerkar Kurkur"]=1,["Blackhole Goat"]=1,["Cappuccino Clownino"]=1,["Compactoroni Diskaloni"]=1,["Nuclearo Dinossauro"]=1,["Chillin Chilli"]=1,["Crazylone Pizzaione"]=1,["Meowl"]=1,["Strawberry Elephant"]=1}
+local OG = {["Karkerkar Kurkur"]=1,["Blackhole Goat"]=1,["Cappuccino Clownino"]=1,["Compactoroni Diskaloni"]=1,["Nuclearo Dinossauro"]=1,["Chillin Chilli"]=1,["Corn Sahur"]=1,["Crazylone Pizzaione"]=1,["Meowl"]=1,["Strawberry Elephant"]=1}
 
 local running = false
 local sold = 0
