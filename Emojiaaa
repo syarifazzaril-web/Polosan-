@@ -1,0 +1,304 @@
+-- Rilzz Hub GUI v2
+-- Fixed: no emoji, added minimize button
+
+repeat task.wait() until game:IsLoaded()
+
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local range = 1000
+local autoBatEnabled = false
+
+-- ===================== CORE LOGIC =====================
+
+function getClosestEnemy()
+    local closest = nil
+    local shortest = math.huge
+
+    char = player.Character or player.CharacterAdded:Wait()
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
+
+    for _, v in pairs(workspace:GetChildren()) do
+        if v:IsA("Model") and v ~= char then
+            local hum = v:FindFirstChildOfClass("Humanoid")
+            local enemyHrp = v:FindFirstChild("HumanoidRootPart")
+
+            if hum and hum.Health > 0 and enemyHrp then
+                local dist = (hrp.Position - enemyHrp.Position).Magnitude
+                if dist < shortest then
+                    shortest = dist
+                    closest = v
+                end
+            end
+        end
+    end
+
+    return closest
+end
+
+task.spawn(function()
+    while task.wait(0.15) do
+        if autoBatEnabled then
+            char = player.Character or player.CharacterAdded:Wait()
+            local tool = char:FindFirstChild("Bat") or char:FindFirstChildOfClass("Tool")
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+
+            if tool and hrp and tool:FindFirstChild("Handle") then
+                local enemy = getClosestEnemy()
+                if enemy then
+                    local enemyHrp = enemy:FindFirstChild("HumanoidRootPart")
+                    if enemyHrp then
+                        local dist = (hrp.Position - enemyHrp.Position).Magnitude
+                        if dist <= range then
+                            hrp.CFrame = CFrame.lookAt(hrp.Position, enemyHrp.Position)
+                            tool:Activate()
+                            firetouchinterest(tool.Handle, enemyHrp, 0)
+                            firetouchinterest(tool.Handle, enemyHrp, 1)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- ===================== GUI =====================
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "RilzzHub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = player.PlayerGui
+
+local normalSize = UDim2.new(0, 260, 0, 300)
+local miniSize = UDim2.new(0, 260, 0, 40)
+local minimized = false
+
+-- Main Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = normalSize
+MainFrame.Position = UDim2.new(0.5, -130, 0.5, -150)
+MainFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(0, 100, 255)
+Stroke.Thickness = 1.5
+Stroke.Parent = MainFrame
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 8)
+Corner.Parent = MainFrame
+
+-- Title Bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Name = "TitleBar"
+TitleBar.Size = UDim2.new(1, 0, 0, 40)
+TitleBar.BackgroundColor3 = Color3.fromRGB(0, 60, 180)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 8)
+TitleCorner.Parent = TitleBar
+
+local TitleFix = Instance.new("Frame")
+TitleFix.Size = UDim2.new(1, 0, 0.5, 0)
+TitleFix.Position = UDim2.new(0, 0, 0.5, 0)
+TitleFix.BackgroundColor3 = Color3.fromRGB(0, 60, 180)
+TitleFix.BorderSizePixel = 0
+TitleFix.Parent = TitleBar
+
+-- Title Label
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Text = "Rilzz Hub"
+TitleLabel.Size = UDim2.new(1, -80, 1, 0)
+TitleLabel.Position = UDim2.new(0, 12, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 16
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TitleBar
+
+-- Minimize Button
+local MinBtn = Instance.new("TextButton")
+MinBtn.Text = "_"
+MinBtn.Size = UDim2.new(0, 28, 0, 28)
+MinBtn.Position = UDim2.new(1, -68, 0.5, -14)
+MinBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 100)
+MinBtn.TextColor3 = Color3.fromRGB(200, 200, 255)
+MinBtn.TextSize = 16
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.BorderSizePixel = 0
+MinBtn.Parent = TitleBar
+
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 5)
+MinCorner.Parent = MinBtn
+
+MinBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        MainFrame.Size = miniSize
+        MinBtn.Text = "+"
+    else
+        MainFrame.Size = normalSize
+        MinBtn.Text = "_"
+    end
+end)
+
+-- Close Button
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Text = "X"
+CloseBtn.Size = UDim2.new(0, 28, 0, 28)
+CloseBtn.Position = UDim2.new(1, -34, 0.5, -14)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 30, 30)
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 13
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Parent = TitleBar
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 5)
+CloseCorner.Parent = CloseBtn
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Divider
+local Divider = Instance.new("Frame")
+Divider.Size = UDim2.new(1, -20, 0, 1)
+Divider.Position = UDim2.new(0, 10, 0, 50)
+Divider.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
+Divider.BorderSizePixel = 0
+Divider.Parent = MainFrame
+
+-- Section Label
+local SectionLabel = Instance.new("TextLabel")
+SectionLabel.Text = "Combat"
+SectionLabel.Size = UDim2.new(1, -20, 0, 20)
+SectionLabel.Position = UDim2.new(0, 10, 0, 60)
+SectionLabel.BackgroundTransparency = 1
+SectionLabel.TextColor3 = Color3.fromRGB(0, 140, 255)
+SectionLabel.TextSize = 12
+SectionLabel.Font = Enum.Font.GothamBold
+SectionLabel.TextXAlignment = Enum.TextXAlignment.Left
+SectionLabel.Parent = MainFrame
+
+-- ===================== TOGGLE: Auto Bat =====================
+
+local ToggleFrame = Instance.new("Frame")
+ToggleFrame.Size = UDim2.new(1, -20, 0, 44)
+ToggleFrame.Position = UDim2.new(0, 10, 0, 88)
+ToggleFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 35)
+ToggleFrame.BorderSizePixel = 0
+ToggleFrame.Parent = MainFrame
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0, 7)
+ToggleCorner.Parent = ToggleFrame
+
+local ToggleStroke = Instance.new("UIStroke")
+ToggleStroke.Color = Color3.fromRGB(0, 60, 140)
+ToggleStroke.Thickness = 1
+ToggleStroke.Parent = ToggleFrame
+
+-- Toggle Label
+local ToggleLabel = Instance.new("TextLabel")
+ToggleLabel.Text = "Auto Bat"
+ToggleLabel.Size = UDim2.new(1, -70, 1, 0)
+ToggleLabel.Position = UDim2.new(0, 12, 0, 0)
+ToggleLabel.BackgroundTransparency = 1
+ToggleLabel.TextColor3 = Color3.fromRGB(220, 220, 255)
+ToggleLabel.TextSize = 14
+ToggleLabel.Font = Enum.Font.Gotham
+ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+ToggleLabel.Parent = ToggleFrame
+
+-- Toggle Pill
+local ToggleBtn = Instance.new("Frame")
+ToggleBtn.Size = UDim2.new(0, 46, 0, 24)
+ToggleBtn.Position = UDim2.new(1, -58, 0.5, -12)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+ToggleBtn.BorderSizePixel = 0
+ToggleBtn.Parent = ToggleFrame
+
+local ToggleBtnCorner = Instance.new("UICorner")
+ToggleBtnCorner.CornerRadius = UDim.new(1, 0)
+ToggleBtnCorner.Parent = ToggleBtn
+
+-- Toggle Circle
+local ToggleCircle = Instance.new("Frame")
+ToggleCircle.Size = UDim2.new(0, 18, 0, 18)
+ToggleCircle.Position = UDim2.new(0, 3, 0.5, -9)
+ToggleCircle.BackgroundColor3 = Color3.fromRGB(130, 130, 160)
+ToggleCircle.BorderSizePixel = 0
+ToggleCircle.Parent = ToggleBtn
+
+local CircleCorner = Instance.new("UICorner")
+CircleCorner.CornerRadius = UDim.new(1, 0)
+CircleCorner.Parent = ToggleCircle
+
+-- Status Label
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Text = "OFF"
+StatusLabel.Size = UDim2.new(0, 36, 0, 18)
+StatusLabel.Position = UDim2.new(1, -100, 0.5, -9)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.TextColor3 = Color3.fromRGB(130, 130, 160)
+StatusLabel.TextSize = 11
+StatusLabel.Font = Enum.Font.GothamBold
+StatusLabel.Parent = ToggleFrame
+
+-- Click detector
+local ToggleHit = Instance.new("TextButton")
+ToggleHit.Size = UDim2.new(1, 0, 1, 0)
+ToggleHit.BackgroundTransparency = 1
+ToggleHit.Text = ""
+ToggleHit.Parent = ToggleFrame
+
+local toggled = false
+
+ToggleHit.MouseButton1Click:Connect(function()
+    toggled = not toggled
+    autoBatEnabled = toggled
+
+    if toggled then
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
+        ToggleCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        ToggleCircle.Position = UDim2.new(0, 25, 0.5, -9)
+        StatusLabel.Text = "ON"
+        StatusLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
+        ToggleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ToggleFrame.BackgroundColor3 = Color3.fromRGB(5, 20, 50)
+        ToggleStroke.Color = Color3.fromRGB(0, 100, 255)
+    else
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+        ToggleCircle.BackgroundColor3 = Color3.fromRGB(130, 130, 160)
+        ToggleCircle.Position = UDim2.new(0, 3, 0.5, -9)
+        StatusLabel.Text = "OFF"
+        StatusLabel.TextColor3 = Color3.fromRGB(130, 130, 160)
+        ToggleLabel.TextColor3 = Color3.fromRGB(220, 220, 255)
+        ToggleFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 35)
+        ToggleStroke.Color = Color3.fromRGB(0, 60, 140)
+    end
+end)
+
+-- Footer
+local Footer = Instance.new("TextLabel")
+Footer.Text = "Rilzz Hub v1.0"
+Footer.Size = UDim2.new(1, 0, 0, 20)
+Footer.Position = UDim2.new(0, 0, 1, -25)
+Footer.BackgroundTransparency = 1
+Footer.TextColor3 = Color3.fromRGB(40, 70, 120)
+Footer.TextSize = 11
+Footer.Font = Enum.Font.Gotham
+Footer.Parent = MainFrame
