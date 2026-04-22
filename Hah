@@ -13,14 +13,20 @@ local Window = Rayfield:CreateWindow({
 local Tab = Window:CreateTab("Main", 4483362458)
 
 local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local rootPart = character:WaitForChild("HumanoidRootPart")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 
-local finalPosition = Vector3.new(708.052, 3.167, 188.172)
+-- Fungsi ambil karakter terbaru
+local function getCharacter()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local rootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+    return character, rootPart, humanoid
+end
+
+local finalPosition = Vector3.new(703.29931640625, 11.34885025024414, 214.4062957763672)
+local startPosition = Vector3.new(699.768, 3.167, 231.199)
+local afterKickPosition = Vector3.new(-2643.9912109375, 49.99802017211914, 157.18048095703125)
+
 local detecting = false
-local moveConnection
 local toolConnection
 local isRunning = false
 local isEnabled = false
@@ -28,64 +34,132 @@ local isEnabled = false
 local function stopAll()
     detecting = false
     isRunning = false
-    if moveConnection then moveConnection:Disconnect() moveConnection = nil end
     if toolConnection then toolConnection:Disconnect() toolConnection = nil end
+    -- Force unfreeze karakter terbaru
+    local _, _, humanoid = getCharacter()
+    humanoid.WalkSpeed = 16
+    humanoid.JumpPower = 50
 end
 
-local function runSequence()
+local function safeTeleport(rootPart, pos, timeout)
+    rootPart.CFrame = CFrame.new(pos)
+    local waited = 0
+    repeat
+        task.wait(0.05)
+        waited += 0.05
+        if not isEnabled then return end
+    until (rootPart.Position - pos).Magnitude < 5 or waited >= (timeout or 2)
+end
+
+local function safeWait(seconds)
+    for i = 1, seconds do
+        task.wait(1)
+        if not isEnabled then return false end
+    end
+    return true
+end
+
+local function onToolDetected(character, rootPart)
+    if not detecting then return end
+    if not isEnabled then return end
+    detecting = false
+    if toolConnection then toolConnection:Disconnect() toolConnection = nil end
+    task.spawn(function()
+        task.wait(0.2)
+        if isEnabled then
+            task.spawn(runSequence)
+        end
+    end)
+end
+
+function runSequence()
     if isRunning then return end
     if not isEnabled then return end
     isRunning = true
     detecting = false
 
-    if moveConnection then moveConnection:Disconnect() moveConnection = nil end
     if toolConnection then toolConnection:Disconnect() toolConnection = nil end
 
-    rootPart.CFrame = CFrame.new(Vector3.new(699.768, 3.167, 231.199))
-    task.wait(0.50)
+    -- Ambil karakter terbaru setiap kali loop mulai
+    local character, rootPart, humanoid = getCharacter()
 
+    -- STEP 1: Teleport ke start
+    safeTeleport(rootPart, startPosition, 2)
+    if not isEnabled then isRunning = false return end
+    task.wait(0.4)
+    if not isEnabled then isRunning = false return end
+
+    -- STEP 2: Fire kick event
     local args = { [1] = 1 }
-    game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Packages"):WaitForChild("Network"):WaitForChild("rev_KickEvent"):FireServer(unpack(args))
-    rootPart.CFrame = CFrame.new(Vector3.new(-2643.9912109375, 49.99802017211914, 157.18048095703125))
+    game:GetService("ReplicatedStorage")
+        :WaitForChild("Shared")
+        :WaitForChild("Packages")
+        :WaitForChild("Network")
+        :WaitForChild("rev_KickEvent")
+        :FireServer(unpack(args))
 
-    task.wait(16)
-
+    safeTeleport(rootPart, afterKickPosition, 2)
     if not isEnabled then isRunning = false return end
 
-    rootPart.CFrame = CFrame.new(Vector3.new(714.386, 3.167, 167.385))
-    task.wait(0.1)
+    -- STEP 3: Wait 12 detik
+    local ok = safeWait(12)
+    if not ok or not isEnabled then isRunning = false return end
 
-    local tween = TweenService:Create(rootPart, TweenInfo.new(1, Enum.EasingStyle.Linear), {CFrame = CFrame.new(finalPosition)})
-    tween:Play()
-    tween.Completed:Wait()
+    -- Ambil karakter lagi setelah respawn dari kick
+    character, rootPart, humanoid = getCharacter()
 
-    if not isEnabled then isRunning = false return end
-
+    -- STEP 4: Aktifkan detecting
     detecting = true
     isRunning = false
 
-    local lastPosition = rootPart.Position
-
-    moveConnection = RunService.Heartbeat:Connect(function()
-        if not detecting then return end
-        local dist = (rootPart.Position - lastPosition).Magnitude
-        if dist > 0.01 then
-            rootPart.CFrame = CFrame.new(finalPosition)
+    -- Listen tool
+    toolConnection = character.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") then
+            onToolDetected(character, rootPart)
         end
-        lastPosition = rootPart.Position
     end)
 
-    toolConnection = character.ChildAdded:Connect(function(child)
+    -- Race condition check
+    task.spawn(function()
+        task.wait(0.15)
         if not detecting then return end
-        if not isEnabled then return end
-        if child:IsA("Tool") then
-            detecting = false
-            if moveConnection then moveConnection:Disconnect() moveConnection = nil end
-            toolConnection:Disconnect() toolConnection = nil
-            task.spawn(runSequence)
+        for _, child in ipairs(character:GetChildren()) do
+            if child:IsA("Tool") then
+                onToolDetected(character, rootPart)
+                return
+            end
+        end
+    end)
+
+    -- Loop TP ke finalPosition tiap 0.5 detik
+    task.spawn(function()
+        while detecting and isEnabled do
+            -- Selalu ambil rootPart terbaru di loop
+            local c, rp = getCharacter()
+            rp.CFrame = CFrame.new(finalPosition)
+            task.wait(0.5)
+            if detecting then
+                for _, child in ipairs(c:GetChildren()) do
+                    if child:IsA("Tool") then
+                        onToolDetected(c, rp)
+                        return
+                    end
+                end
+            end
         end
     end)
 end
+
+-- Auto update karakter saat respawn
+player.CharacterAdded:Connect(function()
+    if isEnabled then
+        isRunning = false
+        detecting = false
+        if toolConnection then toolConnection:Disconnect() toolConnection = nil end
+        task.wait(1) -- tunggu karakter load dulu
+        task.spawn(runSequence)
+    end
+end)
 
 Tab:CreateToggle({
     Name = "Auto Perfect And Claim",
@@ -94,6 +168,8 @@ Tab:CreateToggle({
     Callback = function(value)
         isEnabled = value
         if isEnabled then
+            isRunning = false
+            detecting = false
             task.spawn(runSequence)
         else
             stopAll()
