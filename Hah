@@ -101,8 +101,8 @@ function runSequence()
     safeTeleport(rootPart, afterKickPosition, 2)
     if not isEnabled then isRunning = false return end
 
-    -- STEP 3: Wait 12 detik
-    local ok = safeWait(15)
+    -- STEP 3: Wait 16 detik
+    local ok = safeWait(16)
     if not ok or not isEnabled then isRunning = false return end
 
     -- Ambil karakter lagi setelah respawn dari kick
