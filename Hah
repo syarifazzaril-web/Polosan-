@@ -102,7 +102,7 @@ function runSequence()
     if not isEnabled then isRunning = false return end
 
     -- STEP 3: Wait 12 detik
-    local ok = safeWait(12)
+    local ok = safeWait(15)
     if not ok or not isEnabled then isRunning = false return end
 
     -- Ambil karakter lagi setelah respawn dari kick
