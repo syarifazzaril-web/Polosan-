@@ -42,7 +42,7 @@ local function runSequence()
     if toolConnection then toolConnection:Disconnect() toolConnection = nil end
 
     rootPart.CFrame = CFrame.new(Vector3.new(699.768, 3.167, 231.199))
-    task.wait(0.35)
+    task.wait(0.50)
 
     local args = { [1] = 1 }
     game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Packages"):WaitForChild("Network"):WaitForChild("rev_KickEvent"):FireServer(unpack(args))
