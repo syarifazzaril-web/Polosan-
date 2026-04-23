@@ -14,7 +14,6 @@ local Tab = Window:CreateTab("Main", 4483362458)
 
 local player = game.Players.LocalPlayer
 
--- Fungsi ambil karakter terbaru
 local function getCharacter()
     local character = player.Character or player.CharacterAdded:Wait()
     local rootPart = character:WaitForChild("HumanoidRootPart")
@@ -30,38 +29,45 @@ local detecting = false
 local toolConnection
 local isRunning = false
 local isEnabled = false
+local currentSession = 0 -- ID sesi, setiap loop baru angkanya beda
 
 local function stopAll()
     detecting = false
     isRunning = false
+    currentSession += 1 -- matiin semua coroutine lama
     if toolConnection then toolConnection:Disconnect() toolConnection = nil end
-    -- Force unfreeze karakter terbaru
     local _, _, humanoid = getCharacter()
-    humanoid.WalkSpeed = 16
-    humanoid.JumpPower = 50
+    if humanoid then
+        humanoid.WalkSpeed = 16
+        humanoid.JumpPower = 50
+    end
 end
 
-local function safeTeleport(rootPart, pos, timeout)
+local function safeTeleport(rootPart, pos, timeout, session)
     rootPart.CFrame = CFrame.new(pos)
     local waited = 0
     repeat
         task.wait(0.05)
         waited += 0.05
-        if not isEnabled then return end
+        if not isEnabled then return false end
+        if currentSession ~= session then return false end -- sesi lama? keluar
     until (rootPart.Position - pos).Magnitude < 5 or waited >= (timeout or 2)
+    return true
 end
 
-local function safeWait(seconds)
+local function safeWait(seconds, session)
     for i = 1, seconds do
         task.wait(1)
         if not isEnabled then return false end
+        if currentSession ~= session then return false end -- sesi lama? keluar
     end
     return true
 end
 
-local function onToolDetected(character, rootPart)
+local function onToolDetected(session)
     if not detecting then return end
     if not isEnabled then return end
+    if currentSession ~= session then return end
     detecting = false
     if toolConnection then toolConnection:Disconnect() toolConnection = nil end
     task.spawn(function()
@@ -77,17 +83,18 @@ function runSequence()
     if not isEnabled then return end
     isRunning = true
     detecting = false
+    currentSession += 1 -- buat ID sesi baru
+    local session = currentSession
 
     if toolConnection then toolConnection:Disconnect() toolConnection = nil end
 
-    -- Ambil karakter terbaru setiap kali loop mulai
     local character, rootPart, humanoid = getCharacter()
 
     -- STEP 1: Teleport ke start
-    safeTeleport(rootPart, startPosition, 2)
-    if not isEnabled then isRunning = false return end
+    local ok = safeTeleport(rootPart, startPosition, 2, session)
+    if not ok or not isEnabled or currentSession ~= session then isRunning = false return end
     task.wait(0.4)
-    if not isEnabled then isRunning = false return end
+    if not isEnabled or currentSession ~= session then isRunning = false return end
 
     -- STEP 2: Fire kick event
     local args = { [1] = 1 }
@@ -98,12 +105,12 @@ function runSequence()
         :WaitForChild("rev_KickEvent")
         :FireServer(unpack(args))
 
-    safeTeleport(rootPart, afterKickPosition, 2)
-    if not isEnabled then isRunning = false return end
+    ok = safeTeleport(rootPart, afterKickPosition, 2, session)
+    if not ok or not isEnabled or currentSession ~= session then isRunning = false return end
 
     -- STEP 3: Wait 18 detik
-    local ok = safeWait(18)
-    if not ok or not isEnabled then isRunning = false return end
+    ok = safeWait(18, session)
+    if not ok or not isEnabled or currentSession ~= session then isRunning = false return end
 
     -- Ambil karakter lagi setelah respawn dari kick
     character, rootPart, humanoid = getCharacter()
@@ -115,17 +122,17 @@ function runSequence()
     -- Listen tool
     toolConnection = character.ChildAdded:Connect(function(child)
         if child:IsA("Tool") then
-            onToolDetected(character, rootPart)
+            onToolDetected(session)
         end
     end)
 
     -- Race condition check
     task.spawn(function()
         task.wait(0.15)
-        if not detecting then return end
+        if not detecting or currentSession ~= session then return end
         for _, child in ipairs(character:GetChildren()) do
             if child:IsA("Tool") then
-                onToolDetected(character, rootPart)
+                onToolDetected(session)
                 return
             end
         end
@@ -133,15 +140,14 @@ function runSequence()
 
     -- Loop TP ke finalPosition tiap 0.5 detik
     task.spawn(function()
-        while detecting and isEnabled do
-            -- Selalu ambil rootPart terbaru di loop
+        while detecting and isEnabled and currentSession == session do
             local c, rp = getCharacter()
             rp.CFrame = CFrame.new(finalPosition)
             task.wait(0.5)
-            if detecting then
+            if detecting and currentSession == session then
                 for _, child in ipairs(c:GetChildren()) do
                     if child:IsA("Tool") then
-                        onToolDetected(c, rp)
+                        onToolDetected(session)
                         return
                     end
                 end
@@ -150,14 +156,21 @@ function runSequence()
     end)
 end
 
--- Auto update karakter saat respawn
-player.CharacterAdded:Connect(function()
+-- Auto loop ulang saat karakter respawn/reset
+player.CharacterAdded:Connect(function(newCharacter)
     if isEnabled then
         isRunning = false
         detecting = false
+        currentSession += 1 -- matiin coroutine lama
         if toolConnection then toolConnection:Disconnect() toolConnection = nil end
-        task.wait(1) -- tunggu karakter load dulu
-        task.spawn(runSequence)
+
+        newCharacter:WaitForChild("HumanoidRootPart")
+        newCharacter:WaitForChild("Humanoid")
+        task.wait(1)
+
+        if isEnabled then
+            task.spawn(runSequence)
+        end
     end
 end)
 
