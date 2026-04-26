@@ -1,0 +1,922 @@
+-- [[ 1. SETUP & CORE VARIABLES ]] --
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+local SafeParent = (pcall(function() return gethui() end) and gethui()) or PlayerGui
+
+if SafeParent:FindFirstChild("RILZZ_LUCKY_HUB") then 
+    SafeParent.RILZZ_LUCKY_HUB:Destroy() 
+end
+
+-- [[ THEME SETUP ]] --
+local Theme = {
+    Background = Color3.fromRGB(5, 5, 8),
+    Surface = Color3.fromRGB(15, 15, 20),
+    SurfaceLight = Color3.fromRGB(25, 25, 35),
+    Accent = Color3.fromRGB(4, 203, 41),
+    Text = Color3.fromRGB(255, 255, 255),
+    TextDim = Color3.fromRGB(150, 150, 150),
+    Success = Color3.fromRGB(4, 203, 41) 
+}
+
+-- [[ SETTINGS ]] --
+_G.AutoBreak = false
+_G.AutoTPEgg = false 
+_G.AutoHitBigEgg = false 
+_G.AutoHitZone2 = false 
+_G.AutoCollect = false
+_G.AutoPickUp = false 
+_G.AutoPickDivine = false 
+_G.AutoTpSafeZone = false 
+_G.AutoUpgradeAll = false
+_G.AutoUpgradeSpecific = false
+_G.AutoRebirth = false 
+_G.InstantPrompt = false 
+_G.TargetPlatform = 1 
+
+_G.FarmEggs = {
+    Common = false, Rare = false, Epic = false, Legendary = false, Mythic = false,
+    Secret = false, Godly = false, OG = false, Inferno = false, Divine = false,
+    Emerald = false, Sapphire = false, Amethyst = false, Skibidi = false,
+    Obsidian = false
+}
+
+local EggOrder = {
+    "Common", "Rare", "Epic", "Legendary", "Mythic", "Secret", "Godly", 
+    "OG", "Inferno", "Divine", "Emerald", "Sapphire", "Amethyst", "Skibidi", "Obsidian"
+}
+
+-- Blacklist กันกดมั่ว
+local PickUpBlacklist = {
+    "buy hammers", "buy gear", "new event!", "sign up",
+    "spawn godly egg", "spawn skibidi egg", "spawn og egg", "teleport",
+    "sell", "place", "upgrade", "trade"
+}
+
+-- พิกัดฐานสำหรับนำของไปดรอป
+local dropZoneCFrame = CFrame.new(127.0415802, 3.0075314, -59.6825866)
+
+-- [[ 2. UI CREATION ]] --
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "RILZZ_LUCKY_HUB"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.DisplayOrder = 9999
+ScreenGui.Parent = SafeParent
+
+local toggleBtn = Instance.new("ImageButton", ScreenGui)
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0, 15, 0, 150)
+toggleBtn.BackgroundColor3 = Theme.Surface
+toggleBtn.Image = "rbxthumb://type=Asset&id=117149073945265&w=150&h=150"
+toggleBtn.Draggable = true
+
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0.5, 0)
+local btnStroke = Instance.new("UIStroke", toggleBtn)
+btnStroke.Color = Theme.Accent
+btnStroke.Thickness = 2.5
+
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 320, 0, 340); Main.Position = UDim2.new(0.5, -170, 0.5, -210)
+Main.BackgroundColor3 = Theme.Background; Main.BorderSizePixel = 0; Main.Active = true; Main.Draggable = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+
+local TopBar = Instance.new("Frame", Main)
+TopBar.Size = UDim2.new(1, 0, 0, 50); TopBar.BackgroundColor3 = Theme.Surface; TopBar.BorderSizePixel = 0; TopBar.ZIndex = 10
+
+local Logo = Instance.new("ImageLabel", TopBar)
+Logo.Size = UDim2.new(0, 36, 0, 36)
+Logo.Position = UDim2.new(0, 10, 0.5, -18)
+Logo.BackgroundTransparency = 1
+Logo.ZIndex = 11
+Logo.Image = "rbxthumb://type=Asset&id=117149073945265&w=150&h=150" 
+Logo.ScaleType = Enum.ScaleType.Fit
+Instance.new("UICorner", Logo).CornerRadius = UDim.new(0.2, 0)
+
+local Title = Instance.new("TextLabel", TopBar) 
+Title.Size = UDim2.new(0, 160, 0, 22) 
+Title.Position = UDim2.new(0, 52, 0, 5) 
+Title.BackgroundTransparency = 1 
+Title.Text = "RILZZ HUB" 
+Title.TextColor3 = Theme.Text 
+Title.TextSize = 18 
+Title.Font = Enum.Font.GothamBold 
+Title.TextXAlignment = Enum.TextXAlignment.Left 
+Title.ZIndex = 11 
+
+local Subtitle = Instance.new("TextLabel", TopBar) 
+Subtitle.Size = UDim2.new(0, 160, 0, 16) 
+Subtitle.Position = UDim2.new(0, 52, 0, 26) 
+Subtitle.BackgroundTransparency = 1 
+Subtitle.Text = "Break a Brainrot Egg!" 
+Subtitle.TextColor3 = Theme.Accent 
+Subtitle.TextSize = 10 
+Subtitle.Font = Enum.Font.GothamSemibold 
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left 
+Subtitle.ZIndex = 11 
+
+local TabContainer = Instance.new("ScrollingFrame", Main)
+TabContainer.Size = UDim2.new(1, -16, 0, 40)
+TabContainer.Position = UDim2.new(0, 8, 0, 56)
+TabContainer.BackgroundColor3 = Theme.Surface
+TabContainer.ScrollBarThickness = 2
+TabContainer.CanvasSize = UDim2.new(1.6, 0, 0, 0) 
+Instance.new("UICorner", TabContainer).CornerRadius = UDim.new(0, 8)
+
+local TabLayout = Instance.new("UIListLayout", TabContainer)
+TabLayout.FillDirection = Enum.FillDirection.Horizontal; TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left; TabLayout.VerticalAlignment = Enum.VerticalAlignment.Center; TabLayout.Padding = UDim.new(0, 8)
+Instance.new("UIPadding", TabContainer).PaddingLeft = UDim.new(0, 5)
+
+local Content = Instance.new("Frame", Main)
+Content.Size = UDim2.new(1, -16, 1, -110); Content.Position = UDim2.new(0, 8, 0, 102); Content.BackgroundColor3 = Theme.Surface; Content.ClipsDescendants = true
+Instance.new("UICorner", Content).CornerRadius = UDim.new(0, 10)
+
+local Tabs = {}
+local function CreateTab(name)
+    local Btn = Instance.new("TextButton", TabContainer)
+    Btn.Size = UDim2.new(0, 80, 0, 28); Btn.BackgroundColor3 = Theme.SurfaceLight; Btn.Text = name; Btn.TextColor3 = Theme.TextDim; Btn.TextSize = 11; Btn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+
+    local Page = Instance.new("ScrollingFrame", Content)
+    Page.Name = name .. "Page"; Page.Size = UDim2.new(1, 0, 1, 0); Page.BackgroundTransparency = 1; Page.ScrollBarThickness = 2; Page.ScrollBarImageColor3 = Theme.Accent; Page.Visible = false
+    
+    local PL = Instance.new("UIListLayout", Page)
+    PL.Padding = UDim.new(0, 10); PL.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    Instance.new("UIPadding", Page).PaddingTop = UDim.new(0, 12); Instance.new("UIPadding", Page).PaddingBottom = UDim.new(0, 12)
+
+    task.spawn(function()
+        while task.wait(1) do
+            if Page and PL then Page.CanvasSize = UDim2.new(0, 0, 0, PL.AbsoluteContentSize.Y + 100) end
+        end
+    end)
+
+    table.insert(Tabs, {Btn = Btn, Page = Page})
+    Btn.MouseButton1Click:Connect(function()
+        for _, t in pairs(Tabs) do t.Page.Visible = false; TweenService:Create(t.Btn, TweenInfo.new(0.2), {BackgroundColor3 = Theme.SurfaceLight, TextColor3 = Theme.TextDim}):Play() end
+        Page.Visible = true; TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Accent, TextColor3 = Color3.new(0,0,0)}):Play()
+    end)
+    return Page
+end
+
+local MainTab = CreateTab("Main")
+local EggTab = CreateTab("EGG")
+local CollectTab = CreateTab("Collect")
+local UpdateTab = CreateTab("Update")   
+local DetailsTab = CreateTab("Details") 
+
+Tabs[1].Page.Visible = true; Tabs[1].Btn.BackgroundColor3 = Theme.Accent; Tabs[1].Btn.TextColor3 = Color3.new(0,0,0)
+toggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
+
+-- [ UI Helper Functions ]
+local function CreateToggle(parent, text, stateVar)
+    local Btn = Instance.new("TextButton", parent)
+    Btn.Size = UDim2.new(0, 300, 0, 45); Btn.BackgroundColor3 = Theme.SurfaceLight; Btn.Text = "  "..text; Btn.TextColor3 = Theme.Text; Btn.TextXAlignment = 0; Btn.Font = Enum.Font.GothamBold; Btn.TextSize = 11
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 8)
+    local Status = Instance.new("Frame", Btn)
+    Status.Size = UDim2.new(0, 10, 0, 10); Status.Position = UDim2.new(1, -20, 0.5, -5); Status.BackgroundColor3 = Theme.TextDim
+    Instance.new("UICorner", Status).CornerRadius = UDim.new(1, 0)
+
+    Btn.MouseButton1Click:Connect(function()
+        _G[stateVar] = not _G[stateVar]
+        local isActive = _G[stateVar]
+        TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundColor3 = isActive and Theme.Accent or Theme.SurfaceLight, TextColor3 = isActive and Color3.new(0,0,0) or Theme.Text}):Play()
+        TweenService:Create(Status, TweenInfo.new(0.2), {BackgroundColor3 = isActive and Theme.Accent or Theme.TextDim}):Play()
+    end)
+    return Btn
+end
+
+local function CreateEggToggle(parent, text, eggKey)
+    local Btn = Instance.new("TextButton", parent)
+    Btn.Size = UDim2.new(0, 300, 0, 40); Btn.BackgroundColor3 = Theme.SurfaceLight; Btn.Text = "  "..text; Btn.TextColor3 = Theme.Text; Btn.TextXAlignment = 0; Btn.Font = Enum.Font.GothamBold; Btn.TextSize = 11
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 8)
+    local Status = Instance.new("Frame", Btn)
+    Status.Size = UDim2.new(0, 10, 0, 10); Status.Position = UDim2.new(1, -20, 0.5, -5); Status.BackgroundColor3 = Theme.TextDim
+    Instance.new("UICorner", Status).CornerRadius = UDim.new(1, 0)
+
+    Btn.MouseButton1Click:Connect(function()
+        _G.FarmEggs[eggKey] = not _G.FarmEggs[eggKey]
+        local isActive = _G.FarmEggs[eggKey]
+        TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundColor3 = isActive and Theme.Accent or Theme.SurfaceLight, TextColor3 = isActive and Color3.new(0,0,0) or Theme.Text}):Play()
+        TweenService:Create(Status, TweenInfo.new(0.2), {BackgroundColor3 = isActive and Theme.Accent or Theme.TextDim}):Play()
+    end)
+end
+
+local function CreateToggleWithInput(parentPage, text, toggleVar, numVar, minVal, maxVal)
+    local frame = Instance.new("Frame", parentPage)
+    frame.Size = UDim2.new(0, 300, 0, 45); frame.BackgroundTransparency = 1
+    
+    local btn = Instance.new("TextButton", frame)
+    btn.Size = UDim2.new(0.65, 0, 1, 0); btn.BackgroundColor3 = Theme.SurfaceLight; btn.Text = "  "..text; btn.TextColor3 = Theme.Text; btn.Font = Enum.Font.GothamBold; btn.TextSize = 11; btn.TextXAlignment = 0
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    
+    local Status = Instance.new("Frame", btn)
+    Status.Size = UDim2.new(0, 10, 0, 10); Status.Position = UDim2.new(1, -15, 0.5, -5); Status.BackgroundColor3 = Theme.TextDim
+    Instance.new("UICorner", Status).CornerRadius = UDim.new(1, 0)
+    
+    btn.MouseButton1Click:Connect(function()
+        _G[toggleVar] = not _G[toggleVar]
+        local isActive = _G[toggleVar]
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = isActive and Theme.Accent or Theme.SurfaceLight, TextColor3 = isActive and Color3.new(0,0,0) or Theme.Text}):Play()
+        TweenService:Create(Status, TweenInfo.new(0.2), {BackgroundColor3 = isActive and Theme.Accent or Theme.TextDim}):Play()
+    end)
+    
+    local input = Instance.new("TextBox", frame)
+    input.Size = UDim2.new(0.3, 0, 1, 0); input.Position = UDim2.new(0.7, 0, 0, 0); input.BackgroundColor3 = Theme.SurfaceLight; input.TextColor3 = Theme.Accent; input.Font = Enum.Font.GothamBold; input.TextSize = 14
+    input.Text = "Platform: " .. tostring(_G[numVar])
+    Instance.new("UICorner", input).CornerRadius = UDim.new(0, 8)
+    
+    input.FocusLost:Connect(function()
+        local valStr = input.Text:match("%d+")
+        local val = tonumber(valStr)
+        if val then 
+            val = math.clamp(val, minVal, maxVal)
+            _G[numVar] = val
+            input.Text = "Platform: " .. tostring(val)
+        else 
+            input.Text = "Platform: " .. tostring(_G[numVar]) 
+        end
+    end)
+    return frame
+end
+
+local function CreateButton(parent, text, callback)
+    local Btn = Instance.new("TextButton", parent)
+    Btn.Size = UDim2.new(0, 300, 0, 45); Btn.BackgroundColor3 = Theme.SurfaceLight; Btn.Text = "  "..text; Btn.TextColor3 = Theme.Accent; Btn.TextXAlignment = 0; Btn.Font = Enum.Font.GothamBold; Btn.TextSize = 11
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 8)
+    Btn.MouseButton1Click:Connect(function()
+        TweenService:Create(Btn, TweenInfo.new(0.1), {BackgroundColor3 = Theme.Accent, TextColor3 = Color3.new(0,0,0)}):Play(); task.wait(0.1); TweenService:Create(Btn, TweenInfo.new(0.1), {BackgroundColor3 = Theme.SurfaceLight, TextColor3 = Theme.Accent}):Play()
+        if callback then callback() end
+    end)
+    return Btn
+end
+
+-- 🚀 ฟังก์ชัน Triple TP (เพิ่มล็อกความเร็ว แก้บัคเด้งทะลุพื้นและกันระบบดึงกลับของเกม)
+local function TripleTP(targetCFrame)
+    pcall(function()
+        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = targetCFrame
+            hrp.Velocity = Vector3.zero -- ล็อกให้นิ่ง
+            task.wait(0.05) 
+            hrp.CFrame = targetCFrame
+            hrp.Velocity = Vector3.zero 
+            task.wait(0.05) 
+            hrp.CFrame = targetCFrame
+            hrp.Velocity = Vector3.zero
+        end
+    end)
+end
+
+local function GetSafeZoneCFrame()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
+            for _, ui in pairs(v:GetChildren()) do
+                if ui:IsA("SurfaceGui") or ui:IsA("BillboardGui") then
+                    for _, txt in pairs(ui:GetDescendants()) do
+                        if txt:IsA("TextLabel") and txt.Text:lower():find("safe zone") then
+                            return v.CFrame * CFrame.new(0, 5, 0)
+                        end
+                    end
+                end
+            end
+            if v.Name:lower():find("safe") and v.Name:lower():find("zone") then
+                return v.CFrame * CFrame.new(0, 5, 0)
+            end
+        end
+    end
+    return nil
+end
+
+-- =======================================
+-- 📌 UI PLACEMENT - MAIN & OTHERS
+-- =======================================
+
+CreateToggle(MainTab, "⚡ AUTO Hit  (🥚Egg All♾️)", "AutoBreak")
+CreateToggle(MainTab, "🚀 AUTO TP TO EGG  (Universal TP)", "AutoTPEgg") 
+CreateToggle(MainTab, "💥 AUTO HIT EGG VAULT  (🔨Hit Super Speed⚡)", "AutoHitBigEgg")
+CreateToggle(MainTab, "⚔️ AUTO HIT ZONE 2    (🔨Hit Super Speed⚡)", "AutoHitZone2") 
+CreateToggle(MainTab, "🖐️ AUTO PICK UP", "AutoPickUp")
+CreateToggle(MainTab, "💎 AUTO PICK UP (DIVINE ONLY)", "AutoPickDivine")
+CreateToggle(MainTab, "⏱️ INSTANT INTERACT (No Delay)", "InstantPrompt")
+CreateToggle(MainTab, "🛸 AUTO TP SAFE ZONE (When Carrying)", "AutoTpSafeZone")
+
+-- 🌟 ปุ่มวาร์ปโซน 1, 2, Vault 
+CreateButton(MainTab, "🚀 TP TO ZONE 1", function()
+    pcall(function()
+        local zone = workspace.World.Zones:FindFirstChild("StealZone1")
+        if zone then TripleTP(zone.CFrame * CFrame.new(0, 5, 0)) end
+    end)
+end)
+
+CreateButton(MainTab, "🚀 TP TO ZONE 2", function()
+    pcall(function()
+        local zone = workspace.World.Zones:FindFirstChild("StealZone2")
+        if zone then TripleTP(zone.CFrame * CFrame.new(0, 5, 0)) end
+    end)
+end)
+
+CreateButton(MainTab, "🚀 TP TO VAULT", function()
+    pcall(function()
+        local zone = workspace.World.Zones:FindFirstChild("StealZoneVault")
+        if zone then 
+            TripleTP(zone.CFrame * CFrame.new(0, 5, 0)) 
+        end
+    end)
+end)
+
+CreateButton(MainTab, "🛸 TP TO SAFE ZONE", function()
+    pcall(function()
+        local sz = GetSafeZoneCFrame()
+        if sz then TripleTP(sz) end
+    end)
+end)
+
+CreateButton(MainTab, "🔓 UNLOCK ZONES.   (❌Cannot be picked up. Brainrot❌)", function()
+    pcall(function()
+        local count = 0
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                local isWall = false
+                local vName = v.Name:lower()
+                if not vName:find("safe") and not vName:find("vault") then
+                    if vName:find("door") or vName:find("wall") or vName:find("zone") or vName:find("glass") then isWall = true end
+                    for _, ui in pairs(v:GetChildren()) do
+                        if ui:IsA("SurfaceGui") or ui:IsA("BillboardGui") then
+                            for _, txt in pairs(ui:GetDescendants()) do
+                                if txt:IsA("TextLabel") then
+                                    local t = txt.Text:lower()
+                                    if not t:find("safe") and not t:find("vault") and (t:find("unlock") or t:find("zone") or t:find("open") or t:find("v.i.p")) then isWall = true end
+                                end
+                            end
+                        end
+                    end
+                end
+                if isWall then v:Destroy(); count = count + 1 end
+            end
+        end
+    end)
+end)
+
+for _, eggName in ipairs(EggOrder) do 
+    CreateEggToggle(EggTab, "Farm " .. eggName, eggName) 
+end
+
+CreateToggle(CollectTab, "💰 AUTO COLLECT MONEY (1-60)", "AutoCollect")
+CreateToggle(CollectTab, "⬆️ AUTO UPGRADE ALL (1-30)", "AutoUpgradeAll")
+CreateToggleWithInput(CollectTab, "🎯 AUTO UPGRADE (Delay 0.2)", "AutoUpgradeSpecific", "TargetPlatform", 1, 30)
+CreateToggle(CollectTab, "♻️ AUTO REBIRTH", "AutoRebirth")
+
+-- ================= [ ข้อความในแท็บ DETAILS ] ================= --
+local CreditsText1 = Instance.new("TextLabel") 
+CreditsText1.Size = UDim2.new(1, 0, 0, 30) 
+CreditsText1.BackgroundTransparency = 1 
+CreditsText1.Text = " Break a Brainrot Egg!" 
+CreditsText1.TextColor3 = Theme.Success 
+CreditsText1.TextSize = 15 
+CreditsText1.Font = Enum.Font.GothamBold 
+CreditsText1.Parent = DetailsTab
+
+local DevText1 = Instance.new("TextLabel") 
+DevText1.Size = UDim2.new(1, 0, 0, 25) 
+DevText1.BackgroundTransparency = 1 
+DevText1.Text = "🌿 by RILZZ " 
+DevText1.TextColor3 = Theme.Success 
+DevText1.TextSize = 13
+DevText1.Font = Enum.Font.GothamSemibold 
+DevText1.Parent = DetailsTab
+
+local ZairosText = Instance.new("TextLabel") 
+ZairosText.Size = UDim2.new(1, 0, 0, 25) 
+ZairosText.BackgroundTransparency = 1 
+ZairosText.Text = "👍 Like and follow" 
+ZairosText.TextColor3 = Theme.Success 
+ZairosText.TextSize = 13
+ZairosText.Font = Enum.Font.Gotham 
+ZairosText.Parent = DetailsTab
+
+local AlinurText = Instance.new("TextLabel") 
+AlinurText.Size = UDim2.new(1, 0, 0, 25) 
+AlinurText.BackgroundTransparency = 1 
+AlinurText.Text = "▶️ YouTube RILZZ HUB" 
+AlinurText.TextColor3 = Theme.Success 
+AlinurText.TextSize = 13
+AlinurText.Font = Enum.Font.GothamSemibold 
+AlinurText.Parent = DetailsTab
+
+local TargetText1 = Instance.new("TextLabel") 
+TargetText1.Size = UDim2.new(1, 0, 0, 25) 
+TargetText1.BackgroundTransparency = 1 
+TargetText1.Text = "🟢 It works" 
+TargetText1.TextColor3 = Theme.Success 
+TargetText1.TextSize = 12
+TargetText1.Font = Enum.Font.GothamSemibold 
+TargetText1.Parent = DetailsTab
+
+local TargetText2 = Instance.new("TextLabel") 
+TargetText2.Size = UDim2.new(1, 0, 0, 25) 
+TargetText2.BackgroundTransparency = 1 
+TargetText2.Text = "🟠 Waiting for update" 
+TargetText2.TextColor3 = Theme.Success 
+TargetText2.TextSize = 11
+TargetText2.Font = Enum.Font.GothamSemibold 
+TargetText2.Parent = DetailsTab
+
+local TargetText3 = Instance.new("TextLabel") 
+TargetText3.Size = UDim2.new(1, 0, 0, 25) 
+TargetText3.BackgroundTransparency = 1 
+TargetText3.Text = "🔴 It's not working" 
+TargetText3.TextColor3 = Theme.Success 
+TargetText3.TextSize = 10
+TargetText3.Font = Enum.Font.GothamSemibold 
+TargetText3.Parent = DetailsTab
+
+-- ================= [ ข้อความในแท็บ UPDATE ] ================= --
+local CreditsText2 = Instance.new("TextLabel") 
+CreditsText2.Size = UDim2.new(1, 0, 0, 30) 
+CreditsText2.BackgroundTransparency = 1 
+CreditsText2.Text = " New Update 2.2" 
+CreditsText2.TextColor3 = Theme.Success 
+CreditsText2.TextSize = 15 
+CreditsText2.Font = Enum.Font.GothamBold 
+CreditsText2.Parent = UpdateTab
+
+local DevText2 = Instance.new("TextLabel") 
+DevText2.Size = UDim2.new(1, 0, 0, 25) 
+DevText2.BackgroundTransparency = 1 
+DevText2.Text = "🌟 TP Zone 1" 
+DevText2.TextColor3 = Theme.Success 
+DevText2.TextSize = 13
+DevText2.Font = Enum.Font.GothamSemibold 
+DevText2.Parent = UpdateTab
+
+local DevText3 = Instance.new("TextLabel") 
+DevText3.Size = UDim2.new(1, 0, 0, 25) 
+DevText3.BackgroundTransparency = 1 
+DevText3.Text = "⭐ TP Zone 2" 
+DevText3.TextColor3 = Theme.Success 
+DevText3.TextSize = 13
+DevText3.Font = Enum.Font.GothamSemibold 
+DevText3.Parent = UpdateTab
+
+local DevText4 = Instance.new("TextLabel") 
+DevText4.Size = UDim2.new(1, 0, 0, 25) 
+DevText4.BackgroundTransparency = 1 
+DevText4.Text = "✨ Tp Zone Vault" 
+DevText4.TextColor3 = Theme.Success 
+DevText4.TextSize = 13
+DevText4.Font = Enum.Font.GothamSemibold 
+DevText4.Parent = UpdateTab
+
+local DevText5 = Instance.new("TextLabel") 
+DevText5.Size = UDim2.new(1, 0, 0, 25) 
+DevText5.BackgroundTransparency = 1 
+DevText5.Text = "🌛 Pick up TP SAFE ZoNE" 
+DevText5.TextColor3 = Theme.Success 
+DevText5.TextSize = 12
+DevText5.Font = Enum.Font.GothamSemibold 
+DevText5.Parent = UpdateTab
+
+local DevText5 = Instance.new("TextLabel") 
+DevText5.Size = UDim2.new(1, 0, 0, 25) 
+DevText5.BackgroundTransparency = 1 
+DevText5.Text = "🌟Fix Auto Divine  (Not 100% functional.)" 
+DevText5.TextColor3 = Theme.Success 
+DevText5.TextSize = 12
+DevText5.Font = Enum.Font.GothamSemibold 
+DevText5.Parent = UpdateTab
+
+-- =======================================
+-- 🔄 LOGIC FIXES 
+-- =======================================
+
+-- 🛸 LOGIC: AUTO TP SAFE ZONE 
+task.spawn(function()
+    while task.wait(0.5) do
+        if _G.AutoTpSafeZone and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            pcall(function()
+                local isCarrying = false
+                if PlayerGui then
+                    for _, gui in pairs(PlayerGui:GetDescendants()) do
+                        if (gui:IsA("TextButton") or gui:IsA("ImageButton")) and gui.Visible then
+                            local btnText = gui:IsA("TextButton") and gui.Text:lower() or ""
+                            local btnName = gui.Name:lower()
+                            if btnText:find("drop") or btnName:find("drop") then
+                                isCarrying = true; break
+                            end
+                        end
+                    end
+                end
+                
+                if isCarrying then
+                    local szCFrame = GetSafeZoneCFrame()
+                    if szCFrame then
+                        local hrp = player.Character.HumanoidRootPart
+                        if (hrp.Position - szCFrame.Position).Magnitude > 20 then
+                            TripleTP(szCFrame)
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- ลบ Delay การกด ProximityPrompt 
+task.spawn(function()
+    while task.wait(0.5) do
+        if _G.InstantPrompt then
+            pcall(function()
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v:IsA("ProximityPrompt") then
+                        v.HoldDuration = 0
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- 🥚 LOGIC: AUTO HIT EGG ALL & AUTO TP EGG (แก้ไขรูปแบบ UUID)
+task.spawn(function()
+    local KnitRemote = nil
+    while task.wait(0.1) do
+        local anySpecific = false
+        local activeTargetEggs = {}
+        for eggName, isActive in pairs(_G.FarmEggs) do 
+            if isActive then 
+                table.insert(activeTargetEggs, string.lower(eggName))
+                anySpecific = true
+            end 
+        end
+        
+        if (_G.AutoBreak or anySpecific) and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            pcall(function()
+                if not KnitRemote then KnitRemote = game:GetService("ReplicatedStorage").Packages.Knit.Services.EggSpawnerService.RF.RequestHitEgg end
+                if not KnitRemote then return end
+                
+                local uuidsToHit = {}
+                local hrp = player.Character.HumanoidRootPart
+                local targetFound = false
+                
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v:IsA("Model") and v.Name:find("-") and #v.Name == 36 then
+                        local isTarget = false
+                        
+                        if _G.AutoBreak then
+                            isTarget = true
+                        end
+                        
+                        if not isTarget and anySpecific then
+                            for _, desc in pairs(v:GetDescendants()) do
+                                if desc:IsA("TextLabel") or desc:IsA("StringValue") then
+                                    local txt = desc:IsA("TextLabel") and string.lower(desc.Text) or string.lower(desc.Value)
+                                    for _, rarity in ipairs(activeTargetEggs) do
+                                        if string.find(txt, rarity) then
+                                            isTarget = true
+                                            break
+                                        end
+                                    end
+                                end
+                                if isTarget then break end
+                            end
+                        end
+                        
+                        if isTarget then
+                            local part = v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart")
+                            if part then
+                                -- ใช้ TripleTP วาร์ป 3 รอบเพื่อทะลุกันโปรดึงกลับ
+                                if _G.AutoTPEgg and not targetFound then
+                                    TripleTP(part.CFrame * CFrame.new(0, 3, 0))
+                                    targetFound = true
+                                end
+                                if (part.Position - hrp.Position).Magnitude <= 100 then
+                                    table.insert(uuidsToHit, v.Name)
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                if #uuidsToHit > 0 then
+                    -- ส่งค่าทีละ UUID โดยใช้ตารางซ้อนตารางให้ตรงกับรูปแบบที่เกมต้องการ 
+                    for _, uuid in ipairs(uuidsToHit) do
+                        task.spawn(function() 
+                            pcall(function() 
+                                KnitRemote:InvokeServer({uuid}) 
+                            end) 
+                        end)
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- 💥 LOGIC: AUTO HIT EGG VAULT (FASTEST MODE)
+task.spawn(function()
+    local VaultRemote = nil
+    while task.wait() do -- วนลูปเร็วที่สุดเท่าที่เกมรันได้ (ทุกเฟรม)
+        if _G.AutoHitBigEgg then
+            pcall(function()
+                if not VaultRemote then 
+                    VaultRemote = game:GetService("ReplicatedStorage").Packages.Knit.Services.EggVaultService.RF.RequestHitVaultEgg 
+                end
+                
+                if VaultRemote then 
+                    -- ใช้ task.spawn เพื่อยิงคำสั่งทันทีโดยไม่รอเซิร์ฟเวอร์ตอบกลับ (No Yielding)
+                    task.spawn(function() pcall(function() VaultRemote:InvokeServer() end) end)
+                    -- เบิ้ลให้อีก 1 รอบในเฟรมเดียวกันเพื่อความโหด
+                    task.spawn(function() pcall(function() VaultRemote:InvokeServer() end) end)
+                end
+            end)
+        end
+    end
+end)
+
+-- ⚔️ LOGIC: AUTO HIT ZONE 2 (FASTEST MODE)
+task.spawn(function()
+    local KnitRemote = nil
+    local cachedUUIDs = {}
+    
+    -- ลูปแยกสำหรับ "สแกน" หาไข่รอบตัว (ป้องกันเกมแลคจากการสแกนทุกเฟรม)
+    task.spawn(function()
+        while task.wait(0.1) do
+            if _G.AutoHitZone2 and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                pcall(function()
+                    local tempUUIDs = {}
+                    local hrp = player.Character.HumanoidRootPart
+                    for _, v in pairs(workspace:GetDescendants()) do
+                        if v:IsA("Model") and v.Name:find("-") and #v.Name == 36 then
+                            local part = v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart")
+                            if part and (part.Position - hrp.Position).Magnitude <= 150 then
+                                table.insert(tempUUIDs, v.Name)
+                            end
+                        end
+                    end
+                    cachedUUIDs = tempUUIDs
+                end)
+            end
+        end
+    end)
+
+    -- ลูปสำหรับ "ส่งคำสั่งตี" รัวที่สุดเท่าที่จะทำได้
+    while task.wait() do -- วนลูปทุกเฟรม
+        if _G.AutoHitZone2 and #cachedUUIDs > 0 then
+            pcall(function()
+                if not KnitRemote then 
+                    KnitRemote = game:GetService("ReplicatedStorage").Packages.Knit.Services.EggSpawnerService.RF.RequestHitEgg 
+                end
+                
+                if KnitRemote then
+                    for _, uuid in ipairs(cachedUUIDs) do
+                        task.spawn(function() 
+                            pcall(function() 
+                                KnitRemote:InvokeServer({uuid}) 
+                            end) 
+                        end)
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- 💰 LOGIC: AUTO COLLECT 
+task.spawn(function()
+    local CollectRemote = nil
+    while task.wait(0.5) do
+        if _G.AutoCollect then
+            pcall(function()
+                if not CollectRemote then CollectRemote = game:GetService("ReplicatedStorage").Packages.Knit.Services.BaseService.RF.RequestPlatformCollect end
+                if CollectRemote then
+                    for i = 1, 60 do
+                        task.spawn(function() pcall(function() CollectRemote:InvokeServer(i) end) end)
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- ⬆️ LOGIC: AUTO UPGRADE 
+task.spawn(function()
+    local UpgradeRemote = nil
+    while task.wait(0.2) do
+        if _G.AutoUpgradeAll or _G.AutoUpgradeSpecific then
+            pcall(function()
+                if not UpgradeRemote then UpgradeRemote = game:GetService("ReplicatedStorage").Packages.Knit.Services.BaseService.RF.RequestPlatformUpgrade end
+                if UpgradeRemote then
+                    if _G.AutoUpgradeAll then
+                        for i = 1, 30 do
+                            task.spawn(function() pcall(function() UpgradeRemote:InvokeServer(i) end) end)
+                        end
+                    elseif _G.AutoUpgradeSpecific then
+                        task.spawn(function() pcall(function() UpgradeRemote:InvokeServer(_G.TargetPlatform) end) end)
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- ♻️ LOGIC: AUTO REBIRTH
+task.spawn(function()
+    local RebirthRemote = nil
+    while task.wait(1.5) do
+        if _G.AutoRebirth then
+            pcall(function()
+                if not RebirthRemote then RebirthRemote = game:GetService("ReplicatedStorage").Packages.Knit.Services.RebirthService.RF.RequestRebirth end
+                if RebirthRemote then RebirthRemote:InvokeServer() end
+            end)
+        end
+    end
+end)
+
+-- 🖐️ LOGIC: AUTO PICK UP
+task.spawn(function()
+    while task.wait(0.2) do
+        if _G.AutoPickUp and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            pcall(function()
+                local isCarrying = false
+                if PlayerGui then
+                    for _, gui in pairs(PlayerGui:GetDescendants()) do
+                        if (gui:IsA("TextButton") or gui:IsA("ImageButton")) and gui.Visible then
+                            local btnText = gui:IsA("TextButton") and gui.Text:lower() or ""
+                            local btnName = gui.Name:lower()
+                            if btnText:find("drop") or btnName:find("drop") then
+                                isCarrying = true; break
+                            end
+                        end
+                    end
+                end
+                
+                if isCarrying then return end
+
+                local hrp = player.Character.HumanoidRootPart
+                local hasGrabbed = false 
+                
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if hasGrabbed then break end 
+                    
+                    if v:IsA("ProximityPrompt") then
+                        local text = (v.ActionText .. " " .. v.ObjectText .. " " .. v.Name):lower()
+                        local isBlacklisted = false
+                        for _, word in ipairs(PickUpBlacklist) do
+                            if text:find(word) then isBlacklisted = true; break end
+                        end
+                        if not isBlacklisted and (text:find("pick") or text:find("up")) then
+                            local part = v:FindFirstAncestorWhichIsA("BasePart")
+                            if part and (part.Position - hrp.Position).Magnitude <= 15 then
+                                fireproximityprompt(v)
+                                hasGrabbed = true 
+                            end
+                        end
+                    end
+                    
+                    if v:IsA("BillboardGui") and not hasGrabbed then
+                        local allText = ""
+                        local hasPickUpText = false
+                        for _, txt in pairs(v:GetDescendants()) do
+                            if txt:IsA("TextLabel") then
+                                local tLower = txt.Text:lower()
+                                allText = allText .. " " .. tLower
+                                if tLower:find("pick") or tLower:find("up") then
+                                    hasPickUpText = true
+                                end
+                            end
+                        end
+                        local isBlacklisted = false
+                        for _, word in ipairs(PickUpBlacklist) do
+                            if allText:find(word) then isBlacklisted = true; break end
+                        end
+                        if hasPickUpText and not isBlacklisted then
+                            local part = v.Adornee or v:FindFirstAncestorWhichIsA("BasePart")
+                            if part and (part.Position - hrp.Position).Magnitude <= 15 then
+                                for _, btn in pairs(v:GetDescendants()) do
+                                    if (btn:IsA("TextButton") or btn:IsA("ImageButton")) then
+                                        if getconnections then
+                                            for _, conn in pairs(getconnections(btn.MouseButton1Click)) do
+                                                conn:Fire()
+                                                hasGrabbed = true 
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- 💎 LOGIC: AUTO PICK UP เฉพาะ DIVINE
+task.spawn(function()
+    while task.wait(0.3) do 
+        if _G.AutoPickDivine and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            pcall(function()
+                local isCarrying = false
+                if PlayerGui then
+                    for _, gui in pairs(PlayerGui:GetDescendants()) do
+                        if (gui:IsA("TextButton") or gui:IsA("ImageButton")) and gui.Visible then
+                            local btnText = gui:IsA("TextButton") and gui.Text:lower() or ""
+                            local btnName = gui.Name:lower()
+                            if btnText:find("drop") or btnName:find("drop") then
+                                isCarrying = true; break
+                            end
+                        end
+                    end
+                end
+                
+                local hrp = player.Character.HumanoidRootPart
+
+                if isCarrying then 
+                    local szCFrame = GetSafeZoneCFrame()
+                    if szCFrame and (hrp.Position - szCFrame.Position).Magnitude > 20 then
+                        TripleTP(szCFrame)
+                        task.wait(0.5) 
+                    end
+                    return 
+                end
+
+                local brainrotsFolder = workspace:FindFirstChild("Brainrots")
+                if not brainrotsFolder then return end
+
+                local hasGrabbed = false 
+                
+                local function grabItem(targetUI, targetPart)
+                    local targetPos = targetPart.CFrame * CFrame.new(0, 2, 0)
+                    TripleTP(targetPos)
+                    
+                    pcall(function()
+                        player.Character.Humanoid:MoveTo(hrp.Position + Vector3.new(0.5, 0, 0.5))
+                    end)
+                    
+                    task.wait(0.21)
+                    hrp.Velocity = Vector3.zero
+                    
+                    if targetUI:IsA("ProximityPrompt") then
+                        fireproximityprompt(targetUI)
+                        hasGrabbed = true
+                    elseif targetUI:IsA("BillboardGui") then
+                        for _, btn in pairs(targetUI:GetDescendants()) do
+                            if (btn:IsA("TextButton") or btn:IsA("ImageButton")) then
+                                if getconnections then
+                                    for _, conn in pairs(getconnections(btn.MouseButton1Click)) do
+                                        conn:Fire()
+                                        hasGrabbed = true 
+                                        break
+                                    end
+                                end
+                            end
+                            if hasGrabbed then break end
+                        end
+                    end
+                    
+                    if hasGrabbed then
+                        task.wait(0.5) 
+                    end
+                end
+
+                for _, v in pairs(brainrotsFolder:GetDescendants()) do
+                    if hasGrabbed then break end 
+                    
+                    local isDivine = false
+                    local itemPart = nil
+
+                    if v:IsA("ProximityPrompt") then
+                        local parentObj = v:FindFirstAncestorOfClass("Model") or v:FindFirstAncestorWhichIsA("BasePart")
+                        if parentObj then
+                            for _, child in pairs(parentObj:GetDescendants()) do
+                                if child:IsA("TextLabel") and child.Text:upper():find("DIVINE") then
+                                    isDivine = true; break
+                                end
+                            end
+                        end
+                        if isDivine then itemPart = v:FindFirstAncestorWhichIsA("BasePart") end
+
+                    elseif v:IsA("BillboardGui") then
+                        local allText = ""
+                        for _, txt in pairs(v:GetDescendants()) do
+                            if txt:IsA("TextLabel") then
+                                local tUpper = txt.Text:upper()
+                                if tUpper:find("DIVINE") then isDivine = true end
+                                allText = allText .. " " .. txt.Text:lower()
+                            end
+                        end
+                        if isDivine and (allText:find("pick") or allText:find("up")) then
+                            itemPart = v.Adornee or v:FindFirstAncestorWhichIsA("BasePart")
+                        end
+                    end
+                    
+                    if isDivine and itemPart then
+                        grabItem(v, itemPart)
+                    end
+                end
+            end)
+        end
+    end
+end)
