@@ -1,0 +1,243 @@
+-- [[ 1. SETUP & CORE VARIABLES ]] --
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+local SafeParent = (pcall(function() return gethui() end) and gethui()) or PlayerGui
+
+-- ลบ UI เก่าทิ้ง
+if SafeParent:FindFirstChild("RILZZ_LUCKY_HUB") then 
+    SafeParent.RILZZ_LUCKY_HUB:Destroy() 
+end
+
+-- [[ THEME SETUP ]] --
+local Theme = {
+    Background = Color3.fromRGB(15, 15, 20),
+    Surface = Color3.fromRGB(25, 25, 35),
+    SurfaceLight = Color3.fromRGB(35, 35, 45),
+    Accent = Color3.fromRGB(4, 203, 41), 
+    Text = Color3.fromRGB(255, 255, 255),
+    TextDim = Color3.fromRGB(150, 150, 150)
+}
+
+-- [[ SETTINGS ]] --
+_G.AutoThrow = false
+_G.AutoCollect = false
+_G.AutoRebirth = false
+_G.AutoUpgrade = false
+_G.UpgradeAmount = 10 
+
+-- [[ 2. UI CREATION ]] --
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "RILZZ_LUCKY_HUB"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = SafeParent
+
+-- [ เปลี่ยนปุ่ม FZ กลมๆ ให้เป็นโลโก้รูปภาพ ]
+local toggleBtn = Instance.new("ImageButton", ScreenGui)
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0, 15, 0, 150)
+toggleBtn.BackgroundColor3 = Theme.Surface
+toggleBtn.Image = "rbxthumb://type=Asset&id=117149073945265&w=150&h=150" -- ใช้รูปโลโก้
+toggleBtn.Draggable = true
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0.5, 0) -- ทำให้เป็นวงกลม
+local stroke = Instance.new("UIStroke", toggleBtn)
+stroke.Thickness = 2
+stroke.Color = Theme.Accent -- ใส่ขอบสีเขียวให้เข้าธีม
+
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 320, 0, 420); Main.Position = UDim2.new(0.5, -160, 0.5, -210)
+Main.BackgroundColor3 = Theme.Background; Main.ClipsDescendants = true; Main.Active = true; Main.Draggable = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+
+-- [[ ส่วนหัว (TOPBAR) พร้อมโลโก้ ]] --
+local TopBar = Instance.new("Frame", Main)
+TopBar.Size = UDim2.new(1, 0, 0, 50); TopBar.BackgroundColor3 = Theme.Surface; TopBar.ZIndex = 10
+
+-- โลโก้รูปภาพ (ใช้ rbxthumb เพื่อดึงภาพจาก Decal ID โดยตรง)
+local Logo = Instance.new("ImageLabel", TopBar)
+Logo.Size = UDim2.new(0, 36, 0, 36)
+Logo.Position = UDim2.new(0, 10, 0.5, -18)
+Logo.BackgroundTransparency = 1
+Logo.ZIndex = 11
+Logo.Image = "rbxthumb://type=Asset&id=117149073945265&w=150&h=150" 
+Logo.ScaleType = Enum.ScaleType.Fit
+Instance.new("UICorner", Logo).CornerRadius = UDim.new(0.2, 0)
+
+local Title = Instance.new("TextLabel") 
+Title.Size = UDim2.new(0, 160, 0, 22) 
+Title.Position = UDim2.new(0, 52, 0, 5) 
+Title.BackgroundTransparency = 1 
+Title.Text = "RILZZ HUB" 
+Title.TextColor3 = Theme.Text 
+Title.TextSize = 18 
+Title.Font = Enum.Font.GothamBold 
+Title.TextXAlignment = Enum.TextXAlignment.Left 
+Title.ZIndex = 11 
+Title.Parent = TopBar
+
+local Subtitle = Instance.new("TextLabel") 
+Subtitle.Size = UDim2.new(0, 160, 0, 16) 
+Subtitle.Position = UDim2.new(0, 52, 0, 26) 
+Subtitle.BackgroundTransparency = 1 
+Subtitle.Text = "Throw Lucky Blocks for Brainrots!" 
+Subtitle.TextColor3 = Theme.Accent
+Subtitle.TextSize = 10 
+Subtitle.Font = Enum.Font.GothamSemibold 
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left 
+Subtitle.ZIndex = 11 
+Subtitle.Parent = TopBar
+
+-- [[ เมนูแท็บ ]] --
+local TabContainer = Instance.new("Frame", Main)
+TabContainer.Size = UDim2.new(1, -16, 0, 36); TabContainer.Position = UDim2.new(0, 8, 0, 56)
+TabContainer.BackgroundColor3 = Theme.Surface
+Instance.new("UICorner", TabContainer).CornerRadius = UDim.new(0, 8)
+local TabLayout = Instance.new("UIListLayout", TabContainer)
+TabLayout.FillDirection = 0; TabLayout.HorizontalAlignment = 1; TabLayout.VerticalAlignment = 1; TabLayout.Padding = UDim.new(0, 4)
+
+local Content = Instance.new("Frame", Main)
+Content.Size = UDim2.new(1, -16, 1, -110); Content.Position = UDim2.new(0, 8, 0, 98)
+Content.BackgroundColor3 = Theme.Surface; Content.ClipsDescendants = true
+Instance.new("UICorner", Content).CornerRadius = UDim.new(0, 10)
+
+toggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
+
+local Tabs = {}
+local function CreateTab(name)
+    local Btn = Instance.new("TextButton", TabContainer)
+    Btn.Size = UDim2.new(0, 140, 0, 28); Btn.BackgroundColor3 = Theme.SurfaceLight; Btn.Text = name; Btn.TextColor3 = Theme.TextDim; Btn.TextSize = 12; Btn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+
+    local Page = Instance.new("ScrollingFrame", Content)
+    Page.Size = UDim2.new(1, 0, 1, 0); Page.BackgroundTransparency = 1; Page.ScrollBarThickness = 2; Page.ScrollBarImageColor3 = Theme.Accent; Page.Visible = false
+    local PL = Instance.new("UIListLayout", Page); PL.Padding = UDim.new(0, 10); PL.HorizontalAlignment = 1
+    local PP = Instance.new("UIPadding", Page); PP.PaddingTop = UDim.new(0, 12); PP.PaddingBottom = UDim.new(0, 12)
+
+    table.insert(Tabs, {Btn = Btn, Page = Page})
+
+    Btn.MouseButton1Click:Connect(function()
+        for _, t in pairs(Tabs) do t.Page.Visible = false; TweenService:Create(t.Btn, TweenInfo.new(0.2), {BackgroundColor3 = Theme.SurfaceLight, TextColor3 = Theme.TextDim}):Play() end
+        Page.Visible = true; TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Accent, TextColor3 = Color3.new(0,0,0)}):Play()
+    end)
+    return Page
+end
+
+local MainTab = CreateTab("Main")
+local CollectTab = CreateTab("Collect")
+
+Tabs[1].Page.Visible = true; Tabs[1].Btn.BackgroundColor3 = Theme.Accent; Tabs[1].Btn.TextColor3 = Color3.new(0,0,0)
+
+local function CreateToggle(parent, text, stateVar)
+    local Btn = Instance.new("TextButton", parent)
+    Btn.Size = UDim2.new(0, 280, 0, 45); Btn.BackgroundColor3 = Theme.SurfaceLight; Btn.Text = "  " .. text; Btn.TextColor3 = Theme.Text; Btn.TextXAlignment = 0; Btn.Font = Enum.Font.GothamBold; Btn.TextSize = 12
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 8)
+    local Status = Instance.new("Frame", Btn)
+    Status.Size = UDim2.new(0, 10, 0, 10); Status.Position = UDim2.new(1, -20, 0.5, -5); Status.BackgroundColor3 = Theme.TextDim
+    Instance.new("UICorner", Status).CornerRadius = UDim.new(1, 0)
+
+    Btn.MouseButton1Click:Connect(function()
+        _G[stateVar] = not _G[stateVar]
+        local isActive = _G[stateVar]
+        TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundColor3 = isActive and Theme.Accent or Theme.SurfaceLight}):Play()
+        TweenService:Create(Btn, TweenInfo.new(0.2), {TextColor3 = isActive and Color3.new(0,0,0) or Theme.Text}):Play()
+        TweenService:Create(Status, TweenInfo.new(0.2), {BackgroundColor3 = isActive and Theme.Accent or Theme.TextDim}):Play()
+    end)
+end
+
+-- [ ปุ่มหน้า Main ]
+CreateToggle(MainTab, "🎯 AUTO THROW", "AutoThrow")
+CreateToggle(MainTab, "♻️ AUTO REBIRTH", "AutoRebirth")
+CreateToggle(MainTab, "💪 AUTO UPGRADE POWER", "AutoUpgrade")
+
+local UpdFrame = Instance.new("Frame", MainTab)
+UpdFrame.Size = UDim2.new(0, 280, 0, 40); UpdFrame.BackgroundColor3 = Theme.SurfaceLight; UpdFrame.ZIndex = 12
+Instance.new("UICorner", UpdFrame).CornerRadius = UDim.new(0, 8)
+
+local UpdLabel = Instance.new("TextLabel", UpdFrame)
+UpdLabel.Size = UDim2.new(0.4, 0, 1, 0); UpdLabel.Position = UDim2.new(0, 10, 0, 0); UpdLabel.Text = "Multiplier: 10x"
+UpdLabel.TextColor3 = Theme.Text; UpdLabel.Font = Enum.Font.GothamBold; UpdLabel.TextXAlignment = 0; UpdLabel.BackgroundTransparency = 1
+
+local btn1x = Instance.new("TextButton", UpdFrame); btn1x.Size = UDim2.new(0, 40, 0, 26); btn1x.Position = UDim2.new(1, -140, 0.5, -13); btn1x.Text = "1x"; btn1x.Font = Enum.Font.GothamBold; btn1x.BackgroundColor3 = Theme.Background; btn1x.TextColor3 = Theme.Text; Instance.new("UICorner", btn1x).CornerRadius = UDim.new(0, 6)
+local btn3x = Instance.new("TextButton", UpdFrame); btn3x.Size = UDim2.new(0, 40, 0, 26); btn3x.Position = UDim2.new(1, -90, 0.5, -13); btn3x.Text = "3x"; btn3x.Font = Enum.Font.GothamBold; btn3x.BackgroundColor3 = Theme.Background; btn3x.TextColor3 = Theme.Text; Instance.new("UICorner", btn3x).CornerRadius = UDim.new(0, 6)
+local btn10x = Instance.new("TextButton", UpdFrame); btn10x.Size = UDim2.new(0, 40, 0, 26); btn10x.Position = UDim2.new(1, -40, 0.5, -13); btn10x.Text = "10x"; btn10x.Font = Enum.Font.GothamBold; btn10x.BackgroundColor3 = Theme.Accent; btn10x.TextColor3 = Color3.new(0,0,0); Instance.new("UICorner", btn10x).CornerRadius = UDim.new(0, 6)
+
+local function resetUpdButtons()
+    btn1x.BackgroundColor3 = Theme.Background; btn1x.TextColor3 = Theme.Text
+    btn3x.BackgroundColor3 = Theme.Background; btn3x.TextColor3 = Theme.Text
+    btn10x.BackgroundColor3 = Theme.Background; btn10x.TextColor3 = Theme.Text
+end
+
+btn1x.MouseButton1Click:Connect(function() _G.UpgradeAmount = 1; resetUpdButtons(); btn1x.BackgroundColor3 = Theme.Accent; btn1x.TextColor3 = Color3.new(0,0,0); UpdLabel.Text = "Multiplier: 1x" end)
+btn3x.MouseButton1Click:Connect(function() _G.UpgradeAmount = 3; resetUpdButtons(); btn3x.BackgroundColor3 = Theme.Accent; btn3x.TextColor3 = Color3.new(0,0,0); UpdLabel.Text = "Multiplier: 3x" end)
+btn10x.MouseButton1Click:Connect(function() _G.UpgradeAmount = 10; resetUpdButtons(); btn10x.BackgroundColor3 = Theme.Accent; btn10x.TextColor3 = Color3.new(0,0,0); UpdLabel.Text = "Multiplier: 10x" end)
+
+-- [ ปุ่มหน้า Collect ]
+CreateToggle(CollectTab, "💰 AUTO COLLECT CASH", "AutoCollect")
+
+-- [[ 3. MAIN LOOPS ]] --
+task.spawn(function()
+    local Utility = ReplicatedStorage:WaitForChild("Utility", 10)
+    local Network = Utility and Utility:WaitForChild("Network", 10)
+    
+    if not Network then warn("RILZZ: ไม่พบ Network") return end
+
+    -- Loop: Throw
+    task.spawn(function()
+        while task.wait(0.1) do
+            if _G.AutoThrow then
+                pcall(function()
+                    local claim = Network:FindFirstChild("Throw/ClaimBrainrot")
+                    if claim then task.spawn(function() claim:InvokeServer() end) end
+                    task.wait(0.1) 
+                    local roll = Network:FindFirstChild("Throw/RollLoot")
+                    if roll then task.spawn(function() roll:InvokeServer(9) end) end
+                end)
+            end
+        end
+    end)
+
+    -- Loop: Collect Cash (F1-S1 ถึง S50)
+    task.spawn(function()
+        while task.wait(0.5) do
+            if _G.AutoCollect then
+                pcall(function()
+                    local claimCash = Network:FindFirstChild("PlacementService/ClaimCash")
+                    if claimCash then
+                        for i = 1, 50 do
+                            claimCash:FireServer("F1-S" .. tostring(i))
+                        end
+                    end
+                end)
+            end
+        end
+    end)
+
+    -- Loop: Rebirth
+    task.spawn(function()
+        while task.wait(2) do
+            if _G.AutoRebirth then
+                pcall(function()
+                    local rebirth = Network:FindFirstChild("RebirthService/Rebirth")
+                    if rebirth then rebirth:InvokeServer() end
+                end)
+            end
+        end
+    end)
+
+    -- Loop: Upgrade Power
+    task.spawn(function()
+        while task.wait(0.5) do
+            if _G.AutoUpgrade then
+                pcall(function()
+                    local purchase = Network:FindFirstChild("ThrowUpgrade/purchase")
+                    if purchase then purchase:InvokeServer(_G.UpgradeAmount) end
+                end)
+            end
+        end
+    end)
+end)
+
+print("RILZZ HUB: Floating Logo Update Successfully!")
