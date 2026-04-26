@@ -1,0 +1,509 @@
+-- [[ 1. SETUP & CORE VARIABLES ]] --
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+local SafeParent = (pcall(function() return gethui() end) and gethui()) or PlayerGui
+
+-- ลบ UI เก่าทิ้ง
+if SafeParent:FindFirstChild("RILZZ_LUCKY_HUB") then 
+    SafeParent.RILZZ_LUCKY_HUB:Destroy() 
+end
+
+-- [[ THEME SETUP ]] --
+local Theme = {
+    Background = Color3.fromRGB(5, 5, 8),
+    Surface = Color3.fromRGB(15, 15, 20),
+    SurfaceLight = Color3.fromRGB(25, 25, 35),
+    Accent = Color3.fromRGB(4, 203, 41),
+    Text = Color3.fromRGB(255, 255, 255),
+    TextDim = Color3.fromRGB(150, 150, 150),
+    -- เพิ่มสีตามที่คุณขอมา
+    Gold = Color3.fromRGB(255, 215, 0),
+    Success = Color3.fromRGB(4, 203, 41) 
+}
+
+-- [[ จุด Safe Zone คงที่ จาก CFrame ในรูป ]] --
+local FixedSafeZone = CFrame.new(
+    -137.824371, 4.00753021, 268.105377, 
+    0.909767032, 2.51345806e-08, 0.415119231, 
+    -5.57277691e-09, 1, -4.83346696e-08, 
+    -0.415119231, 4.16599235e-08, 0.909767032
+)
+
+-- [[ 2. UI CREATION ]] --
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "RILZZ_LUCKY_HUB"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = SafeParent
+
+local toggleBtn = Instance.new("ImageButton", ScreenGui)
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0, 15, 0, 150)
+toggleBtn.BackgroundColor3 = Theme.Surface
+toggleBtn.Image = "rbxthumb://type=Asset&id=117149073945265&w=150&h=150"
+toggleBtn.Draggable = true
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0.5, 0)
+Instance.new("UIStroke", toggleBtn).Color = Theme.Accent
+
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 360, 0, 380)
+Main.Position = UDim2.new(0.5, -180, 0.5, -190)
+Main.BackgroundColor3 = Theme.Background
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+
+-- [ TopBar ]
+local TopBar = Instance.new("Frame", Main)
+TopBar.Size = UDim2.new(1, 0, 0, 50)
+TopBar.BackgroundColor3 = Theme.Surface
+TopBar.BorderSizePixel = 0
+
+local Logo = Instance.new("ImageLabel", TopBar)
+Logo.Size = UDim2.new(0, 36, 0, 36)
+Logo.Position = UDim2.new(0, 10, 0.5, -18)
+Logo.BackgroundTransparency = 1
+Logo.Image = "rbxthumb://type=Asset&id=117149073945265&w=150&h=150"
+
+local Title = Instance.new("TextLabel", TopBar)
+Title.Text = "RILZZ HUB"
+Title.Position = UDim2.new(0, 52, 0, 5)
+Title.Size = UDim2.new(0, 160, 0, 22)
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Theme.Text
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+local Subtitle = Instance.new("TextLabel", TopBar)
+Subtitle.Text = "Surf for Lucky Blocks"
+Subtitle.Position = UDim2.new(0, 52, 0, 26)
+Subtitle.Size = UDim2.new(0, 160, 0, 16)
+Subtitle.BackgroundTransparency = 1
+Subtitle.TextColor3 = Theme.Accent
+Subtitle.Font = Enum.Font.GothamSemibold
+Subtitle.TextSize = 10
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left
+
+-- [ ระบบแถบเมนู ]
+local TabContainer = Instance.new("ScrollingFrame", Main)
+TabContainer.Size = UDim2.new(1, -16, 0, 36)
+TabContainer.Position = UDim2.new(0, 8, 0, 56)
+TabContainer.BackgroundColor3 = Theme.Surface
+TabContainer.ScrollBarThickness = 0
+TabContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+Instance.new("UICorner", TabContainer).CornerRadius = UDim.new(0, 8)
+
+local TabLayout = Instance.new("UIListLayout", TabContainer)
+TabLayout.FillDirection = Enum.FillDirection.Horizontal
+TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+TabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+TabLayout.Padding = UDim.new(0, 4)
+
+local Content = Instance.new("Frame", Main)
+Content.Size = UDim2.new(1, -16, 1, -110)
+Content.Position = UDim2.new(0, 8, 0, 105)
+Content.BackgroundColor3 = Theme.Surface
+Content.ClipsDescendants = true
+Instance.new("UICorner", Content).CornerRadius = UDim.new(0, 10)
+
+local Tabs = {}
+local function CreateTab(name)
+    local Btn = Instance.new("TextButton", TabContainer)
+    Btn.Size = UDim2.new(0, 54, 0, 28) -- ปรับให้เล็กลงเพื่อให้ใส่ได้ 6 แท็บพอดี
+    Btn.BackgroundColor3 = Theme.SurfaceLight
+    Btn.Text = name
+    Btn.TextColor3 = Theme.TextDim
+    Btn.Font = Enum.Font.GothamBold
+    Btn.TextSize = 9
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+
+    local Page = Instance.new("ScrollingFrame", Content)
+    Page.Size = UDim2.new(1, 0, 1, 0)
+    Page.BackgroundTransparency = 1
+    Page.Visible = false
+    Page.ScrollBarThickness = 2
+    Instance.new("UIListLayout", Page).Padding = UDim.new(0, 8)
+    Instance.new("UIPadding", Page).PaddingTop = UDim.new(0, 10)
+
+    Btn.MouseButton1Click:Connect(function()
+        for _, t in pairs(Tabs) do
+            t.Page.Visible = false
+            t.Btn.BackgroundColor3 = Theme.SurfaceLight
+        end
+        Page.Visible = true
+        Btn.BackgroundColor3 = Theme.Accent
+    end)
+    table.insert(Tabs, {Btn = Btn, Page = Page})
+    return Page
+end
+
+local MainTab = CreateTab("Main")
+local LuckyTab = CreateTab("Lucky")
+local UpgradeTab = CreateTab("Upgrade")
+local CollectTab = CreateTab("Collect")
+local ComboTab = CreateTab("Combo")
+local DetailsTab = CreateTab("Details") -- สร้างแท็บใหม่
+
+-- [ ฟังก์ชันสร้างปุ่มพื้นฐาน ]
+local function AddButton(parent, text, callback)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(1, -20, 0, 35)
+    btn.BackgroundColor3 = Theme.SurfaceLight
+    btn.Text = text
+    btn.TextColor3 = Theme.Text
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+local function AddToggle(parent, text, callback)
+    local enabled = false
+    local btn = AddButton(parent, text .. " : OFF ❌", function()
+        enabled = not enabled
+        callback(enabled)
+    end)
+    RunService.RenderStepped:Connect(function()
+        btn.Text = text .. (enabled and " : ON ✅" or " : OFF ❌")
+        btn.TextColor3 = enabled and Theme.Accent or Theme.Text
+    end)
+    return btn
+end
+
+local function CreateAdjuster(parent, title, min, max, step, defaultVal, callback)
+    local val = defaultVal
+    callback(val)
+    local frame = Instance.new("Frame", parent)
+    frame.Size = UDim2.new(1, -20, 0, 45)
+    frame.BackgroundTransparency = 1
+
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(1, 0, 0, 15)
+    label.Text = title .. ": " .. val
+    label.TextColor3 = Theme.TextDim
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.GothamSemibold
+    label.TextSize = 11
+
+    local minus = Instance.new("TextButton", frame)
+    minus.Text = "-"
+    minus.Size = UDim2.new(0, 35, 0, 25)
+    minus.Position = UDim2.new(0.1, 0, 0.4, 0)
+    minus.BackgroundColor3 = Theme.SurfaceLight
+    minus.TextColor3 = Theme.Text
+    Instance.new("UICorner", minus).CornerRadius = UDim.new(0, 4)
+
+    local plus = Instance.new("TextButton", frame)
+    plus.Text = "+"
+    plus.Size = UDim2.new(0, 35, 0, 25)
+    plus.Position = UDim2.new(0.9, -35, 0.4, 0)
+    plus.BackgroundColor3 = Theme.SurfaceLight
+    plus.TextColor3 = Theme.Text
+    Instance.new("UICorner", plus).CornerRadius = UDim.new(0, 4)
+
+    minus.MouseButton1Click:Connect(function()
+        val = math.max(min, val - step)
+        label.Text = title .. ": " .. val
+        callback(val)
+    end)
+    plus.MouseButton1Click:Connect(function()
+        val = math.min(max, val + step)
+        label.Text = title .. ": " .. val
+        callback(val)
+    end)
+end
+
+-- ================= [ 1. MAIN TAB: STEAL EVENT & SAFE ZONE ] ================= --
+local EventList = {"Rainbow", "Toxic", "Cosmic", "OG", "Divine", "Taco", "Fire", "Hacked"}
+
+AddButton(MainTab, "Tp Safe Zone 🏠", function()
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = FixedSafeZone
+    end
+end)
+
+AddToggle(MainTab, "Anti Knockback (บอสไม่กระเด็น) 🛡️", function(state)
+    _G.AntiKnockback = state
+    if not state and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CustomPhysicalProperties = PhysicalProperties.new(0.7, 0.3, 0.5)
+        local hum = player.Character:FindFirstChild("Humanoid")
+        if hum then
+            hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+            hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+        end
+    end
+end)
+
+RunService.Stepped:Connect(function()
+    if _G.AntiKnockback and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local hrp = player.Character.HumanoidRootPart
+        local hum = player.Character:FindFirstChild("Humanoid")
+        hrp.CustomPhysicalProperties = PhysicalProperties.new(100, 0.3, 0.5)
+        for _, v in pairs(hrp:GetChildren()) do
+            if v:IsA("BodyVelocity") or v:IsA("BodyForce") or v:IsA("BodyThrust") or v:IsA("BodyPosition") or v:IsA("LinearVelocity") or v:IsA("AngularVelocity") then
+                v:Destroy()
+            end
+        end
+        if hum then
+            hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+            hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+        end
+    end
+end)
+
+AddToggle(MainTab, "Steal Event 🌌", function(state)
+    _G.AutoStealEvent = state
+    if state then
+        task.spawn(function()
+            while _G.AutoStealEvent do
+                for _, name in pairs(EventList) do
+                    if not _G.AutoStealEvent then break end
+                    local fullName = name .. " Lucky Block"
+                    for _, v in pairs(workspace:GetDescendants()) do
+                        if not _G.AutoStealEvent then break end
+                        if v.Name == fullName then
+                            local part = v:IsA("BasePart") and v or v:FindFirstChildWhichIsA("BasePart", true)
+                            local prompt = v:FindFirstChildWhichIsA("ProximityPrompt", true)
+                            if part and prompt then
+                                player.Character.HumanoidRootPart.CFrame = part.CFrame
+                                task.wait(0.2)
+                                if _G.AutoStealEvent then fireproximityprompt(prompt) end
+                                task.wait(0.3)
+                                player.Character.HumanoidRootPart.CFrame = FixedSafeZone
+                                task.wait(1)
+                            end
+                        end
+                    end
+                end
+                task.wait(1)
+            end
+        end)
+    else
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.CFrame = FixedSafeZone
+        end
+    end
+end)
+
+-- ================= [ 2. LUCKY TAB: SPECIFIC STEAL ] ================= --
+local AutoStealLucky = false
+local SelectedBlock = "Common"
+
+local StatusLabel = Instance.new("TextLabel", LuckyTab)
+StatusLabel.Size = UDim2.new(1, -20, 0, 20)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.TextColor3 = Theme.Accent
+StatusLabel.Font = Enum.Font.GothamBold
+StatusLabel.TextSize = 12
+StatusLabel.Text = "Target: Common Lucky Block"
+
+local ToggleSteal = AddToggle(LuckyTab, "Auto Steal Target 🎯", function(state)
+    AutoStealLucky = state
+    if state then
+        task.spawn(function()
+            while AutoStealLucky do
+                local targetName = SelectedBlock .. " Lucky Block"
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if not AutoStealLucky then break end
+                    if v.Name == targetName then
+                        local part = v:IsA("BasePart") and v or v:FindFirstChildWhichIsA("BasePart", true)
+                        local prompt = v:FindFirstChildWhichIsA("ProximityPrompt", true)
+                        if part and prompt then
+                            player.Character.HumanoidRootPart.CFrame = part.CFrame
+                            task.wait(0.2)
+                            if AutoStealLucky then fireproximityprompt(prompt) end
+                            task.wait(0.4)
+                            player.Character.HumanoidRootPart.CFrame = FixedSafeZone
+                            task.wait(1)
+                        end
+                    end
+                end
+                task.wait(0.5)
+            end
+        end)
+    else
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.CFrame = FixedSafeZone
+        end
+    end
+end)
+
+local BlockTypes = {
+    "Divine", "OG", "Exclusive", "Brainrot God", "Secret", 
+    "Mythic", "Legendary", "Epic", "Rare", "Common"
+}
+
+for _, bType in ipairs(BlockTypes) do
+    AddButton(LuckyTab, "Select: " .. bType, function()
+        SelectedBlock = bType
+        StatusLabel.Text = "Target: " .. bType .. " Lucky Block"
+    end)
+end
+
+-- ================= [ 3. UPGRADE TAB ] ================= --
+AddButton(UpgradeTab, "Boost Upgrade ⚡", function()
+    ReplicatedStorage.SharedModules.Network.Remotes:FindFirstChild("Upgrade Boost"):FireServer()
+end)
+AddButton(UpgradeTab, "Speed Upgrade 1 🏃", function()
+    ReplicatedStorage.SharedModules.Network.Remotes:FindFirstChild("Upgrade Speed"):FireServer()
+end)
+AddButton(UpgradeTab, "Speed Upgrade 5 ⏩", function()
+    ReplicatedStorage.SharedModules.Network.Remotes:FindFirstChild("Upgrade Speed 5"):FireServer()
+end)
+AddButton(UpgradeTab, "Carry Upgrade 🎒", function()
+    ReplicatedStorage.SharedModules.Network.Remotes:FindFirstChild("Upgrade Carry Limit"):FireServer()
+end)
+
+-- ================= [ 4. COLLECT TAB ] ================= --
+AddToggle(CollectTab, "Auto Collect Money 🤑", function(state)
+    _G.AutoCollect = state
+    task.spawn(function()
+        while _G.AutoCollect do
+            for i = 1, 20 do
+                if not _G.AutoCollect then break end
+                local args = { [1] = tostring(i) }
+                ReplicatedStorage.SharedModules.Network.Remotes:FindFirstChild("Collect Earnings"):FireServer(unpack(args))
+            end
+            task.wait(1)
+        end
+    end)
+end)
+
+AddButton(CollectTab, "Rebirth ♻️", function()
+    ReplicatedStorage.SharedModules.Network.Remotes.Rebirth:FireServer()
+end)
+
+AddToggle(CollectTab, "Upgrade All Brainrots (1-20) 🧠", function(state)
+    _G.AutoUpgradeAll = state
+    task.spawn(function()
+        while _G.AutoUpgradeAll do
+            for i = 1, 20 do
+                if not _G.AutoUpgradeAll then break end
+                local args = { [1] = tostring(i) }
+                local remote = ReplicatedStorage.SharedModules.Network.Remotes:FindFirstChild("Upgrade Friend")
+                if remote then remote:FireServer(unpack(args)) end
+            end
+            task.wait(1)
+        end
+    end)
+end)
+
+_G.SelectedUpgrade = 1
+CreateAdjuster(CollectTab, "Select Brainrot ID", 1, 20, 1, 1, function(v) 
+    _G.SelectedUpgrade = v 
+end)
+
+AddToggle(CollectTab, "Upgrade Selected Brainrot 🧠", function(state)
+    _G.AutoUpgradeSelected = state
+    task.spawn(function()
+        while _G.AutoUpgradeSelected do
+            local args = { [1] = tostring(_G.SelectedUpgrade) }
+            local remote = ReplicatedStorage.SharedModules.Network.Remotes:FindFirstChild("Upgrade Friend")
+            if remote then remote:FireServer(unpack(args)) end
+            task.wait(0.5)
+        end
+    end)
+end)
+
+-- ================= [ 5. COMBO TAB ] ================= --
+_G.HitboxSize = 10
+CreateAdjuster(ComboTab, "Hitbox Size", 1, 100, 10, 10, function(v) _G.HitboxSize = v end)
+
+AddToggle(ComboTab, "Hitbox Status 🎯", function(state)
+    _G.HitboxEnabled = state
+    task.spawn(function()
+        while _G.HitboxEnabled do
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    p.Character.HumanoidRootPart.Size = Vector3.new(_G.HitboxSize, _G.HitboxSize, _G.HitboxSize)
+                    p.Character.HumanoidRootPart.Transparency = 0.7
+                    p.Character.HumanoidRootPart.CanCollide = false
+                end
+            end
+            task.wait(1)
+        end
+        if not _G.HitboxEnabled then
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    p.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
+                    p.Character.HumanoidRootPart.Transparency = 1
+                    p.Character.HumanoidRootPart.CanCollide = true
+                end
+            end
+        end
+    end)
+end)
+
+_G.SpeedValue = 50
+CreateAdjuster(ComboTab, "WalkSpeed Limit", 16, 1000, 50, 50, function(v) _G.SpeedValue = v end)
+
+AddToggle(ComboTab, "Speed Hack ⚡", function(state)
+    _G.SpeedEnabled = state
+    if not state and player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.WalkSpeed = 16 
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if _G.SpeedEnabled and player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.WalkSpeed = _G.SpeedValue
+    end
+end)
+
+-- ================= [ 6. DETAILS TAB ] ================= --
+local CreditsText = Instance.new("TextLabel") 
+CreditsText.Size = UDim2.new(1, 0, 0, 30) 
+CreditsText.BackgroundTransparency = 1 
+CreditsText.Text = "Surf for Lucky Blocks (I won't update)" 
+CreditsText.TextColor3 = Theme.Success 
+CreditsText.TextSize = 12 
+CreditsText.Font = Enum.Font.GothamBold 
+CreditsText.Parent = DetailsTab
+
+local DevText = Instance.new("TextLabel") 
+DevText.Size = UDim2.new(1, 0, 0, 27) 
+DevText.BackgroundTransparency = 1 
+DevText.Text = "by RILZZ HUB " 
+DevText.TextColor3 = Theme.Success 
+DevText.TextSize = 12 
+DevText.Font = Enum.Font.GothamSemibold 
+DevText.Parent = DetailsTab
+
+local ZairosText = Instance.new("TextLabel") 
+ZairosText.Size = UDim2.new(1, 0, 0, 27) 
+ZairosText.BackgroundTransparency = 1 
+ZairosText.Text = "👍Like and follow" 
+ZairosText.TextColor3 = Theme.Success 
+ZairosText.TextSize = 11 
+ZairosText.Font = Enum.Font.Gotham 
+ZairosText.Parent = DetailsTab
+
+local AlinurText = Instance.new("TextLabel") 
+AlinurText.Size = UDim2.new(1, 0, 0, 27) 
+AlinurText.BackgroundTransparency = 1 
+AlinurText.Text = "YouTube RILZZ HUB" 
+AlinurText.TextColor3 = Theme.Success 
+AlinurText.TextSize = 11 
+AlinurText.Font = Enum.Font.GothamSemibold 
+AlinurText.Parent = DetailsTab
+
+local TargetText = Instance.new("TextLabel") 
+TargetText.Size = UDim2.new(1, 0, 0, 27) 
+TargetText.BackgroundTransparency = 1 
+TargetText.Text = "Still works🟢 " 
+TargetText.TextColor3 = Theme.Success 
+TargetText.TextSize = 11 
+TargetText.Font = Enum.Font.GothamSemibold 
+TargetText.Parent = DetailsTab
+
+-- [ เริ่มต้นหน้าต่าง ]
+Tabs[1].Page.Visible = true
+Tabs[1].Btn.BackgroundColor3 = Theme.Accent
+toggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
