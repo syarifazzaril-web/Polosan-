@@ -1,0 +1,456 @@
+-- [[ 1. SETUP & CORE VARIABLES ]] --
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+local SafeParent = (pcall(function() return gethui() end) and gethui()) or PlayerGui
+
+if SafeParent:FindFirstChild("RILZZ_LUCKY_HUB") then 
+    SafeParent.RILZZ_LUCKY_HUB:Destroy() 
+end
+
+local Theme = {
+    Background = Color3.fromRGB(5, 5, 8),
+    Surface = Color3.fromRGB(15, 15, 20),
+    SurfaceLight = Color3.fromRGB(25, 25, 35),
+    Accent = Color3.fromRGB(4, 203, 41),
+    Text = Color3.fromRGB(255, 255, 255),
+    TextDim = Color3.fromRGB(150, 150, 150)
+}
+
+-- [[ 2. UI CREATION ]] --
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "RILZZ_LUCKY_HUB"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = SafeParent
+
+local toggleBtn = Instance.new("ImageButton", ScreenGui)
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0, 15, 0, 150)
+toggleBtn.BackgroundColor3 = Theme.Surface
+toggleBtn.Image = "rbxthumb://type=Asset&id=117149073945265&w=150&h=150"
+toggleBtn.Draggable = true
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0.5, 0)
+Instance.new("UIStroke", toggleBtn).Color = Theme.Accent
+
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 340, 0, 350)
+Main.Position = UDim2.new(0.5, -170, 0.5, -260)
+Main.BackgroundColor3 = Theme.Background
+Main.ClipsDescendants = true
+Main.Active = true
+Main.Draggable = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+
+local TopBar = Instance.new("Frame", Main)
+TopBar.Size = UDim2.new(1, 0, 0, 50)
+TopBar.BackgroundColor3 = Theme.Surface
+TopBar.BorderSizePixel = 0
+
+-- โลโก้
+local Logo = Instance.new("ImageLabel", TopBar)
+Logo.Size = UDim2.new(0, 36, 0, 36)
+Logo.Position = UDim2.new(0, 10, 0.5, -18)
+Logo.BackgroundTransparency = 1
+Logo.Image = "rbxthumb://type=Asset&id=117149073945265&w=150&h=150"
+Instance.new("UICorner", Logo).CornerRadius = UDim.new(0.2, 0)
+
+local Title = Instance.new("TextLabel", TopBar) 
+Title.Size = UDim2.new(1, -60, 1, 0) 
+Title.Position = UDim2.new(0, 52, 0, 0) 
+Title.BackgroundTransparency = 1 
+Title.Text = "RILZZ HUB " 
+Title.TextColor3 = Theme.Text 
+Title.TextSize = 15 
+Title.Font = Enum.Font.GothamBold 
+Title.TextXAlignment = Enum.TextXAlignment.Left 
+
+local Subtitle = Instance.new("TextLabel") 
+Subtitle.Size = UDim2.new(0, 160, 0, 16) 
+Subtitle.Position = UDim2.new(0, 52, 0, 26) 
+Subtitle.BackgroundTransparency = 1 
+Subtitle.Text = "Shovel Snow for Brainrots!" 
+Subtitle.TextColor3 = Theme.Accent -- เปลี่ยนเป็นสีเขียว Theme.Accent
+Subtitle.TextSize = 10 
+Subtitle.Font = Enum.Font.GothamSemibold 
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left 
+Subtitle.ZIndex = 11 
+Subtitle.Parent = TopBar
+
+local TabContainer = Instance.new("Frame", Main)
+TabContainer.Size = UDim2.new(1, -16, 0, 36)
+TabContainer.Position = UDim2.new(0, 8, 0, 60)
+TabContainer.BackgroundColor3 = Theme.Surface
+Instance.new("UICorner", TabContainer).CornerRadius = UDim.new(0, 8)
+
+local TabLayout = Instance.new("UIListLayout", TabContainer)
+TabLayout.FillDirection = Enum.FillDirection.Horizontal
+TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+TabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+TabLayout.Padding = UDim.new(0, 4)
+
+local Content = Instance.new("Frame", Main)
+Content.Size = UDim2.new(1, -16, 1, -115)
+Content.Position = UDim2.new(0, 8, 0, 105)
+Content.BackgroundColor3 = Theme.Surface
+Instance.new("UICorner", Content).CornerRadius = UDim.new(0, 10)
+
+local Tabs = {}
+local function CreateTab(name)
+    local Btn = Instance.new("TextButton", TabContainer)
+    Btn.Size = UDim2.new(0, 100, 0, 28)
+    Btn.BackgroundColor3 = Theme.SurfaceLight
+    Btn.Text = name
+    Btn.TextColor3 = Theme.TextDim
+    Btn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+
+    local Page = Instance.new("ScrollingFrame", Content)
+    Page.Size = UDim2.new(1, 0, 1, 0)
+    Page.BackgroundTransparency = 1
+    Page.Visible = false
+    Page.ScrollBarThickness = 2
+    local PL = Instance.new("UIListLayout", Page)
+    PL.Padding = UDim.new(0, 5)
+    PL.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    Instance.new("UIPadding", Page).PaddingTop = UDim.new(0, 10)
+    
+    table.insert(Tabs, {Btn = Btn, Page = Page})
+    Btn.MouseButton1Click:Connect(function()
+        for _, t in pairs(Tabs) do
+            t.Page.Visible = false
+            t.Btn.BackgroundColor3 = Theme.SurfaceLight
+            t.Btn.TextColor3 = Theme.TextDim
+        end
+        Page.Visible = true
+        Btn.BackgroundColor3 = Theme.Accent
+        Btn.TextColor3 = Color3.new(0,0,0)
+    end)
+    return Page
+end
+
+local MainTab = CreateTab("Main")
+local BrainrotsTab = CreateTab("Brainrots")
+local CollectTab = CreateTab("Collect")
+Tabs[1].Page.Visible = true
+Tabs[1].Btn.BackgroundColor3 = Theme.Accent
+Tabs[1].Btn.TextColor3 = Color3.new(0,0,0)
+
+toggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
+
+-- [[ 3. VARIABLES ]] --
+local CurrentRarity = "Common"
+local IsAutoFarm = false
+local IsNoclip = false
+local IsFastWalk = false
+local CustomSpeed = 100
+local OriginalPos = nil 
+
+local CollectSettings = {
+    AutoMoney = false, AutoRebirth = false, AutoDmg100 = false, AutoDmg500 = false,
+    AutoSpeed1 = false, AutoSpeed5 = false, AutoCarry = false
+}
+
+-- [[ 4. UI BUILDER ]] --
+local function CreateButton(parent, text, callback)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(0, 300, 0, 40)
+    btn.BackgroundColor3 = Theme.SurfaceLight
+    btn.Text = text
+    btn.TextColor3 = Theme.Text
+    btn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", btn)
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+-- [ ระบบความเร็วแบบ +/- ทีละ 50 ] --
+local SpeedContainer = Instance.new("Frame", MainTab)
+SpeedContainer.Size = UDim2.new(0, 300, 0, 40)
+SpeedContainer.BackgroundTransparency = 1
+
+local SpeedMinus = Instance.new("TextButton", SpeedContainer)
+SpeedMinus.Size = UDim2.new(0, 50, 1, 0)
+SpeedMinus.BackgroundColor3 = Theme.SurfaceLight
+SpeedMinus.Text = "-"
+SpeedMinus.TextColor3 = Theme.Accent
+SpeedMinus.Font = Enum.Font.GothamBold
+SpeedMinus.TextSize = 24
+Instance.new("UICorner", SpeedMinus)
+
+local SpeedLabel = Instance.new("TextLabel", SpeedContainer)
+SpeedLabel.Size = UDim2.new(0, 190, 1, 0)
+SpeedLabel.Position = UDim2.new(0, 55, 0, 0)
+SpeedLabel.BackgroundColor3 = Theme.SurfaceLight
+SpeedLabel.Text = "WalkSpeed: " .. CustomSpeed
+SpeedLabel.TextColor3 = Theme.Text
+SpeedLabel.Font = Enum.Font.GothamBold
+Instance.new("UICorner", SpeedLabel)
+
+local SpeedPlus = Instance.new("TextButton", SpeedContainer)
+SpeedPlus.Size = UDim2.new(0, 50, 1, 0)
+SpeedPlus.Position = UDim2.new(0, 250, 0, 0)
+SpeedPlus.BackgroundColor3 = Theme.SurfaceLight
+SpeedPlus.Text = "+"
+SpeedPlus.TextColor3 = Theme.Accent
+SpeedPlus.Font = Enum.Font.GothamBold
+SpeedPlus.TextSize = 24
+Instance.new("UICorner", SpeedPlus)
+
+SpeedMinus.MouseButton1Click:Connect(function()
+    CustomSpeed = math.max(16, CustomSpeed - 50)
+    SpeedLabel.Text = "WalkSpeed: " .. CustomSpeed
+    if IsFastWalk and player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.WalkSpeed = CustomSpeed
+    end
+end)
+
+SpeedPlus.MouseButton1Click:Connect(function()
+    CustomSpeed = math.min(1000, CustomSpeed + 50)
+    SpeedLabel.Text = "WalkSpeed: " .. CustomSpeed
+    if IsFastWalk and player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.WalkSpeed = CustomSpeed
+    end
+end)
+
+local WalkTgl = CreateButton(MainTab, "Enable WalkSpeed: OFF", function() end)
+WalkTgl.MouseButton1Click:Connect(function()
+    IsFastWalk = not IsFastWalk
+    WalkTgl.Text = IsFastWalk and "Enable WalkSpeed: ON" or "Enable WalkSpeed: OFF"
+    WalkTgl.TextColor3 = IsFastWalk and Theme.Accent or Theme.Text
+    if not IsFastWalk and player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.WalkSpeed = 16
+    end
+end)
+
+local NoclipTgl = CreateButton(MainTab, "Noclip: OFF", function() end)
+NoclipTgl.MouseButton1Click:Connect(function()
+    IsNoclip = not IsNoclip
+    NoclipTgl.Text = IsNoclip and "Noclip: ON" or "Noclip: OFF"
+    NoclipTgl.TextColor3 = IsNoclip and Theme.Accent or Theme.Text
+end)
+
+local FarmTgl = CreateButton(MainTab, "Auto Farm Brainrots: OFF", function() end)
+FarmTgl.MouseButton1Click:Connect(function()
+    IsAutoFarm = not IsAutoFarm
+    FarmTgl.Text = IsAutoFarm and "Auto Farm Brainrots: ON" or "Auto Farm Brainrots: OFF"
+    FarmTgl.TextColor3 = IsAutoFarm and Theme.Accent or Theme.Text
+    
+    if IsAutoFarm and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        OriginalPos = player.Character.HumanoidRootPart.CFrame
+    else
+        OriginalPos = nil
+    end
+end)
+
+local RarityList = {"OG", "GOD", "SECRET", "Mythic", "Legendary", "Epic", "Rare", "Uncommon", "Common"}
+local StatusLabel = Instance.new("TextLabel", MainTab)
+StatusLabel.Size = UDim2.new(0, 300, 0, 25)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Target: " .. CurrentRarity
+StatusLabel.TextColor3 = Theme.Accent
+StatusLabel.Font = Enum.Font.GothamBold
+
+for _, r in ipairs(RarityList) do
+    local b = CreateButton(BrainrotsTab, r, function() end)
+    b.MouseButton1Click:Connect(function()
+        CurrentRarity = r
+        StatusLabel.Text = "Target: " .. CurrentRarity
+        for _, child in pairs(BrainrotsTab:GetChildren()) do
+            if child:IsA("TextButton") then child.BackgroundColor3 = Theme.SurfaceLight end
+        end
+        b.BackgroundColor3 = Theme.Accent
+    end)
+end
+
+local function AddCollectTgl(text, key)
+    local btn = CreateButton(CollectTab, "Auto " .. text .. ": OFF", function() end)
+    btn.MouseButton1Click:Connect(function()
+        CollectSettings[key] = not CollectSettings[key]
+        btn.Text = CollectSettings[key] and "Auto " .. text .. ": ON" or "Auto " .. text .. ": OFF"
+        btn.TextColor3 = CollectSettings[key] and Theme.Accent or Theme.Text
+    end)
+end
+
+-- เพิ่มปุ่มตั้งค่าส่วนต่างๆ ใน CollectTab
+AddCollectTgl("Collect Money", "AutoMoney")
+AddCollectTgl("Rebirth", "AutoRebirth")
+AddCollectTgl("Upgrade DMG 100", "AutoDmg100")
+AddCollectTgl("Upgrade DMG 500", "AutoDmg500")
+AddCollectTgl("Upgrade Speed 1", "AutoSpeed1")
+AddCollectTgl("Upgrade Speed 5", "AutoSpeed5")
+AddCollectTgl("Upgrade Carry 1", "AutoCarry")
+
+-- [[ 5. CORE LOGIC ]] --
+local function StripRichText(text) return string.gsub(text, "<[^>]+>", "") end
+
+local function ClickPickUp()
+    pcall(function()
+        for _, g in pairs(player.PlayerGui:GetDescendants()) do
+            if g:IsA("TextButton") or g:IsA("ImageButton") then
+                local lbl = g:FindFirstChildWhichIsA("TextLabel")
+                local txt = lbl and string.lower(lbl.Text) or ""
+                local nm = string.lower(g.Name)
+                if string.find(txt, "pick") or string.find(nm, "pick") then
+                    if firesignal then 
+                        firesignal(g.MouseButton1Down)
+                        firesignal(g.MouseButton1Click)
+                        firesignal(g.MouseButton1Up)
+                    end
+                    for _, con in pairs(getconnections(g.MouseButton1Click)) do 
+                        con:Function() 
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- [ Thread 1: Player Mods ]
+RunService.Stepped:Connect(function()
+    pcall(function()
+        local char = player.Character
+        if char then
+            if IsNoclip then
+                for _, v in pairs(char:GetDescendants()) do
+                    if v:IsA("BasePart") then v.CanCollide = false end
+                end
+            end
+            local hum = char:FindFirstChild("Humanoid")
+            if IsFastWalk and hum then
+                hum.WalkSpeed = CustomSpeed
+            end
+        end
+    end)
+end)
+
+-- [ Thread 2: AUTO FARM BRAINROTS ]
+task.spawn(function()
+    while task.wait(0.1) do
+        pcall(function()
+            if not IsAutoFarm then return end
+            
+            local char = player.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if not char or not root then return end 
+            
+            local brainrotsFolder = Workspace:FindFirstChild("Brainrots")
+            if not brainrotsFolder then return end
+
+            local targetPart = nil
+
+            for _, brainrot in pairs(brainrotsFolder:GetChildren()) do
+                local isRightRarity = false
+                local isReal = false
+                local isSteal = false 
+                
+                for _, desc in pairs(brainrot:GetDescendants()) do
+                    if desc:IsA("TextLabel") then
+                        local txt = string.lower(StripRichText(desc.Text))
+                        
+                        if string.match(txt, "%f[%w]" .. string.lower(CurrentRarity) .. "%f[%W]") then
+                            isRightRarity = true
+                        end
+                        if string.find(txt, "%$") or string.find(txt, "/s") then
+                            isReal = true
+                        end
+                        if string.find(txt, "steal") then
+                            isSteal = true
+                        end
+                    elseif desc:IsA("ProximityPrompt") then
+                        local a = string.lower(desc.ActionText)
+                        local o = string.lower(desc.ObjectText)
+                        if string.find(a, "steal") or string.find(o, "steal") then
+                            isSteal = true
+                        end
+                    end
+                end
+                
+                if isRightRarity and isReal and not isSteal then
+                    targetPart = brainrot.PrimaryPart or brainrot:FindFirstChildWhichIsA("BasePart")
+                    if targetPart then break end
+                end
+            end
+
+            if targetPart then
+                root.CFrame = targetPart.CFrame * CFrame.new(0, 0, 0)
+                
+                if firetouchinterest then
+                    firetouchinterest(root, targetPart, 0)
+                    task.wait(0.01)
+                    firetouchinterest(root, targetPart, 1)
+                end
+                
+                task.wait(0.25)
+                local prompt = targetPart.Parent:FindFirstChildWhichIsA("ProximityPrompt", true)
+                if prompt then fireproximityprompt(prompt) end
+                
+                ClickPickUp()
+                task.wait(0.3) 
+                
+                if OriginalPos then root.CFrame = OriginalPos end
+                task.wait(0.2)
+            end
+        end)
+    end
+end)
+
+-- [ Thread 3: Auto Collect Money & Remotes (FAST CACHE SYSTEM) ]
+local cachedCollectParts = {}
+local lastCacheUpdate = 0
+
+task.spawn(function()
+    while task.wait(0.2) do
+        pcall(function()
+            local char = player.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            
+            -- อัปเดตแผ่นเก็บเงิน
+            if CollectSettings.AutoMoney and root then
+                if os.clock() - lastCacheUpdate > 15 or #cachedCollectParts == 0 then
+                    table.clear(cachedCollectParts)
+                    for _, folderName in ipairs({"Bases", "Platforms"}) do
+                        local folder = Workspace:FindFirstChild(folderName)
+                        if folder then
+                            for _, v in pairs(folder:GetDescendants()) do
+                                if v.Name == "Collect" and v:IsA("BasePart") then
+                                    table.insert(cachedCollectParts, v)
+                                end
+                            end
+                        end
+                    end
+                    lastCacheUpdate = os.clock()
+                end
+                
+                for _, part in ipairs(cachedCollectParts) do
+                    if firetouchinterest and part.Parent then
+                        firetouchinterest(root, part, 0)
+                        firetouchinterest(root, part, 1)
+                    end
+                end
+            end
+            
+            -- ระบบอัปเกรด (ตาม Request ใหม่)
+            local rem = ReplicatedStorage:FindFirstChild("Remotes")
+            if rem and rem:FindFirstChild("BuyUpgradeEvent") then
+                if CollectSettings.AutoRebirth and rem:FindFirstChild("RebirthEvent") then 
+                    rem.RebirthEvent:FireServer() 
+                end
+                
+                -- Damage
+                if CollectSettings.AutoDmg100 then rem.BuyUpgradeEvent:FireServer("Damage", 100) end
+                if CollectSettings.AutoDmg500 then rem.BuyUpgradeEvent:FireServer("Damage", 500) end
+                
+                -- Speed
+                if CollectSettings.AutoSpeed1 then rem.BuyUpgradeEvent:FireServer("Speed", 1) end
+                if CollectSettings.AutoSpeed5 then rem.BuyUpgradeEvent:FireServer("Speed", 5) end
+                
+                -- Carry
+                if CollectSettings.AutoCarry then rem.BuyUpgradeEvent:FireServer("Carry", 1) end
+            end
+        end)
+    end
+end)
